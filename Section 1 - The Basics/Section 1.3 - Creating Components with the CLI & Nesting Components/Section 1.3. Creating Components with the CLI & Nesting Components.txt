@@ -1,0 +1,22 @@
+> In the terminal within the project directory we can run Angular-CLI commands to create a new component files automatically for us. We use the generate component command followed by the component's name:
+  - ng generate component servers
+  - ng g c servers  [shortcut command of the above]
+
+> This will generate the following files:
+   - app/servers [folder]
+      - servers.component.css
+      - servers.component.html
+      - servers.component.spec.ts
+      - servers.component.ts
+
+> We can remove the servers.component.spec.ts file as this file is used for testing which we do not need for now until we learn more about testing.
+
+> This command will create all the boilerplate code and will also update the app.module.ts file so that we can use the component selector in the app.component.html file.
+
+> We can nest components within other component within the .component.html template for example in the servers.component.html file we can nest the server component within the servers component using the <app-server> tag within the servers html template file.
+
+> To replicate components we simply use the component selector tags multiple times:
+   <app-server></app-server>
+   <app-server></app-server>
+
+> To conclude, we have learned how to create components both manually and with the CLI, how to nest components into each other and how to replicate components using the selectors.
