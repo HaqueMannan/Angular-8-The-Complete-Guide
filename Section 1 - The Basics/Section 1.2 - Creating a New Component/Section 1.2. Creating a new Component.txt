@@ -1,0 +1,40 @@
+> The app.component.html is the root of the application.
+
+> The src/app directory will hold all app related content within this directory. We would create sub folders for our various components.
+
+> It is good practice to name the sub-folder the same as the component name. Each component should typically have its own sub-folder within the app src/directory.
+
+> The .component allows us to know the file is a component (there are many more building blocks to Angular which we will see later). This can have a extension of .ts for typescript, .css for stylesheet, .html for HTML and .spec for a test file.
+Example:
+  - server.component.ts
+
+> A components is simply a typescript class so that Angular can instantiate it to create objects based on the blueprint we setup.
+
+> When exporting the component we should use the convention of the component name followed by the type:
+  - export class ServerComponent { ... }
+
+> Decorators are a typescript feature which allows us to for example enhance our class/elements we use in our code. Decorators are always attached by a @ sign:
+  - @Component({})
+
+> We have to import the decorator because this is something typescript does not know from the start.
+  - import { Component } from '@angular/core';
+
+> We pass in an object in the component decorator to configure it. We can store important information which will be stored as meta-data for the class we are setting up. This will let Angular know what to do with the class. The selector meta-tag is important and allows us to use the HTML tag in order to use the component in the .component.html template. 
+
+> The selector must be a string and we can choose any name for it but it must be a unique selector. Typically we prefix app- followed by the name. The templateURL meta-tag allows us to link a HTML template using the relative path.
+  - @Component({ selector: 'app-server', templateURL: './server.component.html' })
+
+> The .component.html file is the html template file for our component to render to the screen when the selector is used in the main root app.
+
+> To use the component we need to go into the app.module.ts file. A module is a bundle of functionality of a module and it provides Angular the information what feature the module have and can use.
+
+> The @NgModule decorator transforms the empty class object. There are 4 properties we can setup to the object we pass into @NgModule which are declarations, imports, providers and bootstrap.
+  - bootstrap: tells Angular what components should it be aware of at the point in time the whole application starts in the index.html file. We would not touch the bootstrap array.
+  - declarations: We need to register new components in the @NgModule because Angular does not know the components exists until we tell it. We do this by adding the components into the declarations array. We would also need to import the components file so that typescript will know where to look for the file.
+  - imports: simply allows us to add other modules to this module. This allows for splitting of modules into separate modules and import them into one another.
+  - providers
+
+> Once the component has been registered in the app.module.ts file, to use the new component we simply go into the app.component.html file and use the selector tag we defined in the @Component decorator:
+  <app-server></app-server>
+
+> We now have a new Component setup and used within our Angular app.
