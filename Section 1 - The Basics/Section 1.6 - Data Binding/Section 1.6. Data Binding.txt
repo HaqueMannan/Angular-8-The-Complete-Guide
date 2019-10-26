@@ -1,0 +1,111 @@
+> To output data that is dynamic within our template we can use data-binding.
+> Data-binding = Communication between TypeScript code (business logic) of our component and the HTML component template.
+
+> There are different ways for communication the output data:
+   - String Interpolation ( {{ data }} )
+   - Property Binding ( [property] = "data" )
+
+> There are ways for communication of the user input events:
+   - Event Binding ( (event) = "expression" )
+
+> There are ways for communication of both input and output occurring at the same time.
+   - Two-way Binding ( [ (ngModel) ] = "data" )
+
+
+> String interpolation: we use the double curly brackets and enter a TypeScript expression such as a property. We can get the property from the .component.ts file for whatever properties is exported.
+   - server.component.ts:
+      export class ServerComponent {
+         serverId: number = 10;
+         serverStatus: string = 'Offline';
+
+         getServerStatus() {
+            return this.serverStatus;
+         }
+      }
+   - server.component.html:
+      <p>Server with ID {{ serverId }} is {{ getServerStatus() }}</p>
+
+> Any expression that can be resolved as a string in the end can be used in string interpolation for example {{ 'String' }} and this is the only condition for a string interpolation syntax. Therefore, we can call a method which returns a string.
+> We cannot write a multi-line/block expression such as a if or for control structuring inside of a String interpolation. However, we can use a ternary operation inside of a String interpolation syntax.
+> A number can be easily converted into a string and will not be an issue. Therefore, string interpolation requires a string or something that can be converted into a string data in order to work.
+
+
+> Property Binding: square brackets indicate to Angular that we are using property binding. This allows us to dynamically bind some property. For example we can dynamically disable and enable a button by setting the disabled attribute dynamically to true or false based on another value.
+   - server.component.ts:
+      export class ServersComponent implements OnInit {
+         allowNewServer = false;
+
+         constructor() {
+            setTimeout(() => {
+               this.allowNewServer = true
+            }, 2000);
+         }
+      }
+   - server.component.html:
+      <button class="btn btn-primary" [disabled]="!allowNewServer">Add Server</button>
+
+> This allows us to use our TypeScript file to easily interact dynamically with the DOM and the native HTML attributes at runtime as seen in the above button example.
+> We can bind to properties and other elements such as directives and our own components.
+
+> If we want to output something into our template and print some text to it, we should use string interpolation and if we want to change some property for a HTML element, directive or component we should typically use property binding. This is how we can differentiate the two data-binding.
+> We should never mix string interpolation and property binding as this will break the app for example:
+   <p [innerText]="{{ allowNewServer }}"></p>            --> Incorrect
+   <p [innerText]="allowNewServer"></p>                  --> Correct
+   <p>{{ allowNewServer }}</p>                           --> Correct
+
+
+> Event Binding: typically we would use the JavaScript event listener attributes on a HTML element to listen for an event. However, with Angular we use event binding syntax. This uses parenthesis () and we specify the name of the event within them. The value is the code we wish to execute once the event occurs. Below is an example of a click event:
+   - server.component.ts:
+      export class ServersComponent implements OnInit {
+         serverCreationStatus = 'No server was created!';
+         onCreateServer() {
+            this.serverCreationStatus = 'Server was created!';
+         }
+      }
+   - server.component.html:
+      <button class="btn btn-primary" (click)="onCreateServer()">Add Server</button>
+      <p>{{ serverCreationStatus }}</p>
+
+> The method will execute every time the event (in the above this is the click event) occurs.
+> We do not necessarily need to execute a method as the event binding value, we could also put the code we want to execute between the quotation marks but is not good practice to do so.
+
+> As a general rule we should not put too much logic into our templates.
+
+
+>Bindable Properties and Events:
+   - How do you know to which Properties or Events of HTML Elements you may bind? You can basically bind to all Properties and Events - a good idea is to console.log() the element you're interested in to see which properties and events it offers.
+   - Important: For events, you don't bind to onclick but only to click (=> (click)).
+   - The MDN (Mozilla Developer Network) offers nice lists of all properties and events of the element you're interested in. Google search for YOUR_ELEMENT properties or YOUR_ELEMENT events should yield nice results.
+
+> We can use the reserved $event keyword to get the event object from certain events such as the input event and bind this data to a property to display on an element:
+   - server.component.ts:
+      export class ServersComponent implements OnInit {
+         onUpdateServerName(event: Event) {
+            this.serverName = (<HTMLInputElement>event.target).value;
+         }
+      }
+   - server.component.html:
+      <input type="text" class="form-control" (input)="onUpdateServerName($event)">
+      <p>{{ serverName }}</p>> 
+
+> This allows a user to input data to dynamically update the data on a property and display the text as the user types on the screen.
+
+
+> Two-way Binding: allows us to perform the above using an easier way of binding data. Two-way binding allows us to combine the property and the event binding. We do this by combining the square brackets with parenthesis [()]. We use the special ngModel directive. We then set the value to some property defined in our .component.ts file.
+   - server.component.ts:
+      export class ServersComponent implements OnInit {
+         onUpdateServerName(event: Event) {
+            this.serverName = (<HTMLInputElement>event.target).value;
+         }
+      }
+   - server.component.html:
+      <input type="text" class="form-control" [(ngModel)]="serverName">
+
+> This will trigger on the input event and update the value of the property in our component automatically.
+> This also has two-way binding so if we change the same property somewhere else this will also update the input value.
+> This allows us to bind data in both directions i.e. reacting to events in both directions.
+
+> Important: FormsModule is Required for Two-way binding!
+   - For Two-way binding to work, you need to enable the ngModel directive. This is done by adding the FormsModule to the imports[] array in the AppModule.
+   - You then also need to add the import from @angular/forms in the app.module.ts file:
+   - import { FormsModule } from '@angular/forms';
