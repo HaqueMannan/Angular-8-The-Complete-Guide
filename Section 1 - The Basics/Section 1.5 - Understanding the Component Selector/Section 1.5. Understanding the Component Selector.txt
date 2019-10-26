@@ -1,0 +1,31 @@
+> The @Component Selector meta-tag must be a unique selector so that we do not override an already existing Selector accidentally (whether it is our own component or one provided by an external third party package).
+> We do not need to use this type of selector whereby we use a HTML element for the selector e.g:
+   <app-servers></app-servers>
+
+> The Selector works like CSS properties and we are not limited to selecting components by elements. The three different methods we can use are:
+   - HTML Element:
+      .component.ts File
+         @Component {
+            selector: 'app-server'
+         }
+      .component.html File
+         <app-server></app-server>
+
+   - HTML Attribute (using square brackets):
+      .component.ts File
+         @Component {
+            selector: '[app-server]'
+         }
+      .component.html File
+         <div app-servers></div>
+
+   - HTML Class (using period .):
+      .component.ts File
+         @Component {
+            selector: '.app-server'
+         }
+      .component.html File
+         <div class="app-servers"></div>
+
+> Selecting by id and pseudo selectors do not work with Selectors.
+> We Typically would use the element selector for components but there are instances whereby we could use a different selector for our components.
