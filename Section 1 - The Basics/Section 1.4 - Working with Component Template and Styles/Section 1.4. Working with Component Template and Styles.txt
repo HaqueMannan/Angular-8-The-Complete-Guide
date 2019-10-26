@@ -1,0 +1,15 @@
+> We can use both an external and inline component templates.
+> External component templates are the .component.html files.
+> Internal component templates are the html code within the .component.ts file.
+> Both methods are possible but it is more advisable to contain the html template in the .component.html file where there are more than 3 lines of html code.
+
+> The @Component can have a meta-tag option of templateUrl which references an external template file while the meta-tag template allows for inline html template code.
+> One of the two meta-tag must be present and we cannot have both. This is the only property that is a compulsory meta-tag which is required for all components.
+> Selectors and styles meta-tag are not compulsory options.
+> To add multiple lines in an inline template we can use the back ticks (``).
+
+> If we are using Bootstrap we can use HTML classes to style our HTML elements within the .component.html file.
+> To style the elements using CSS we can use the .component.css file. This file defines th style for the component and we can write normal CSS code.
+> Just like the template files meta-tag we can do the same for styling by using the meta-tags styleUrls to reference an external .component.css file or styles for inline styling.
+> This option takes in an array as we can reference multiple stylesheets or multiple inline style properties targeting different elements.
+> Just like the template we need to decide which method to use and cannot combine meta-tags. Again it is recommended to use an external stylesheet if the style code is larger.
