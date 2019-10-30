@@ -1,0 +1,31 @@
+> Unlike structural directives, attribute directive do not add or remove elements. They only change the element they were placed on.
+
+> We can use the ngStyle directive which is an attribute directive to change the style of the element dynamically.
+
+   server.component.ts:
+      export class ServerComponent {
+         ...
+         constructor() {
+            this.serverStatus = Math.random() > 0.5 ? 'online' : 'offline';
+         }
+
+         getColour() {
+            return this.serverStatus === 'online' ? 'green' : 'red';
+         }
+      }
+
+> The constructor is a method types of class has which is called when the component is created. 
+
+> We can set the serverStatus based on a random number using the Math.random() which returns a number between 0 and 1. We can use the logical statement to set the truthy and falsy values based on the random value.
+
+   server.component.html:
+      <p [ngStyle]="{backgroundColor: getColour()}">Server with ID {{ serverId }} is {{ getServerStatus() }}</p>
+
+> The ngStyle directive is a built in directive and is pretty useless by itself. We can use property binding using the square brackets on the directive to call on a method. This will bind the property based off of the directive.
+> The ngStyle property expects to get a JavaScript Object where we define key:value pairs of the style name as the key and the value of the style as the value. We can use either syntax:
+   - [ngStyle]="{'background-color': 'red'}"
+   - [ngStyle]="{backgroundColor: 'red'}"
+
+> In the above example the camel case syntax is used; however, the style value is dynamic based on the return value from the getColour() method.
+
+> The ngStyle allows us to dynamically update the styles of HTML elements. The binding is active and will update the style even when the element property later on changes.
