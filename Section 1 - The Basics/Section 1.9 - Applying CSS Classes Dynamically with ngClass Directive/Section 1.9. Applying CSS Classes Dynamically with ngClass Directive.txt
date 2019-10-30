@@ -1,0 +1,23 @@
+> The ngClass allows us to dynamically add or remove CSS classes on an element.
+> This is another built in attribute directive similar to the ngStyle directive.
+
+   server.component.ts:
+      @Component({
+         ...
+         styles: [`
+            .online {
+               color: white;
+            }
+         `]
+      })
+
+   server.component.html:
+   <p [ngClass]="{online: serverStatus === 'online'}">
+      Server with ID {{ serverId }} is {{ getServerStatus() }}
+   </p>
+
+> The ngClass directive also works as intended when using property binding and so we should wrap it in square brackets. The ngClass directive takes a JavaScript object as its value.
+
+> Again we can use the syntax to wrap the key in single quotes if the text contains hyphens (-) or we can use the camel case syntax.
+
+> For ngClass object it also takes in a key:value pairs where the keys are the CSS class names and the values are the conditions determining whether the class should be attached or not to the element.
