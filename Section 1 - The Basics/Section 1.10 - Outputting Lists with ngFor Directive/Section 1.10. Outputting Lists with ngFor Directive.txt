@@ -1,0 +1,25 @@
+> The ngFor directive is a structural directive and must have a asterisk (*) because it changes the DOM.
+> The ngFor base syntax defines a temporary let variable which loops for each item in the list. Below is an example:
+
+   servers.component.ts:
+      export class ServersComponent implements OnInit {
+         serverName = 'Test';
+         servers = ['TestServer', 'LiveServer'];
+
+         onCreateServer() {
+            this.servers.push(this.serverName);
+         }
+      }
+   
+   server.ServersComponent.html:
+      <app-server *ngFor="let server of servers"></app-server>
+
+> This will loop through all the elements in the array and assign the individual element to the dynamic let server variable. 
+> This is similar to a normal JavaScript forEach loop.
+> This will start with two <app-server> elements in the DOM as there are two items stored initially in the array. However, when more items are added to the array, more <app-server> elements will be added to the DOM using the ngFor directive.
+
+> To get the index of the iteration within a ngFor directive we can use the below syntax:
+   <div *ngFor="let item of items; let i = index"></div>
+
+> we could have named the let i variable anything we want. However, we set this value to index which is a reserved expression.
+> This syntax will allow us to have access to the index of the current iteration. So in the first loop the index is 0, the second loop in the array index is 1, third loop in the array index is 2, and so one. We can therefore have access to the index of the current array loop.
