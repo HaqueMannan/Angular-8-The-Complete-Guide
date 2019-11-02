@@ -1,0 +1,19 @@
+> The cmp-databinding application allows us to use two buttons to add a server or a server blueprint to the list.
+> They look similar but the server item is in bold red text and the blueprint item has italic blue text.
+> This app is running in one component which is the AppComponent. We could do better by splitting this up as it is not ideal to having all of the logic in the one component and maybe splitting it up would make sense because that would also allow us if we build a bigger app to reuse parts of the code.
+> How could we split this? We can create individual components which allows us to lean our app.component.html file and we can bundle our business logics better into each individual components.
+
+> We can use the CLI to create new components using the following command:
+   ng g c componentName --skipTests
+
+> The --skipTests flag will tell the Angular CLI to not create a .component.spec.ts testing file.
+> In the cmp-databinding project we have two components folders called cockpit and server-element.
+
+> the Servers element array is required by both the app.module.component.css as well as the cockpit.component.ts files.
+
+> We now have a app that has been structured nicely to be more lean; however, we now have a broken application where a couple of properties are unknown.
+> We need to somehow get the new server that we add to the cockpit to the array of servers within our app.component.ts i.e. we need to inform our AppComponent that one of its child components, the cockpitComponent, has changed or something has changed in that component to which the AppComponent should react to it.
+> We need to then get that data from the cockpit i.e. the new server which is managed in the servers array in the AppComponent. We need to get the individual server of a single loop iteration down to the server-elementComponent to render each server.
+
+> We need to be able to pass data between components so that our application works as it did when the code was in one single AppComponent file.
+> We now have a cmp-databinding application setup to dive deeper into components and databinding.
