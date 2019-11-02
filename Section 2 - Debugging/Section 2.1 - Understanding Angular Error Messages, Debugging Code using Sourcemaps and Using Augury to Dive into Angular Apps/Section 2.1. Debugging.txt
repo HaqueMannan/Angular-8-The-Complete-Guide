@@ -1,0 +1,69 @@
+///////////////////////////////////////////////////////
+Understanding Angular Error Messages:
+///////////////////////////////////////////////////////
+> Opening the JavaScript console in the web browser developer tools allows us to view any bugs/error messages printed to the console.
+> Angular Error messages have become better over time to help debug errors.
+> The error message example (test with the debugger app by pressing the Add server button):
+
+   Error in ./AppComponent class AppComponent
+   - This message informs us where the error has occur red i.e. which component has the bug.
+
+   inline template:4:6
+   - This message informs us which line the error has occurred. In the above this is line 4.
+   - This is not helpful as it reports as line 4 but everything gets compiled and rebuilt together from the .component.ts & .component.html files and therefore line 4 is the final compiled code and not in our code.
+
+   caused by: Cannot read property 'push' of undefined
+   - This message informs us some useful pieces of information.
+   - We tried to call push on something that is not defined at the time we do call this method.
+   - Therefore, we can look at the .component.html file to see which method is called on the click of the button triggering the push method and then get to the function contained in the .component.ts file.
+   - This issue is not the push itself but the thing we are calling .push on is undefined e.g. this.servers in the example debugging code.
+   - We can find out that the server is declared in our .component.ts file but it is not defined/initialised i.e. assigned any value to it.
+   - The fix to the code is:  
+      app.component.ts:
+         export class AppComponent {
+            server = [];
+         }
+
+> This is a brief example for a potential error message, how to read the error message and how to try to get to the root of the error.
+> There are some more error messages, some more tricky than others; however, to read the message as a starting point and then to narrow down where the error message is occurring in the file and code line is a great method of trying to resolve bugs and error messages.
+
+
+///////////////////////////////////////////////////////
+Debugging Code in the Browser using Sourcemaps:
+///////////////////////////////////////////////////////
+> Sometime reading error messages is not enough or we may not even get an error message.
+> example in the debugger code, we can click the items to remove them from the list; however, clicking on the last item in the list does not work i.e. is not removed from the list regardless how many times we click it. This does not provide any error message in the console.
+> This is a logical error with the onRemoveServer() function and therefore will not provide any error messages in the console.
+> In chrome developer tools we can go into Sources and view all of the sources imported on the page.
+> The main.bundle.js is the important file. This file is not easy to debug.
+> If we click on a row line to add a breakpoint, this will jump us to the typescript file.
+> Typescript does not run in the browser and the bundle.js files are used instead. To access the typescript we can use the JavaScript sourcemaps.
+> Sourcemaps are a little addition that the CLI adds to our bundles which allow the browser to translate/map our JavaScript code to our typescript files in development (for live deployment the sourcemaps are stripped out).
+> This allows us to place breakpoint in our typescript code. Try adding one on line 16 of the app.component.ts file in the browser. So now when we click somewhere on the list, the code will pause at this line. We can inspect and see all the values of our variables and what the code is doing to help us debug our code.
+> The logical error is that we add +1 to the id. 
+
+   onRemoveServer(id: number) {
+      const position = id + 1;
+      this.servers.splice(position, 1);
+   }
+
+> If we have two items in a list and click the item - the id = 1 which is true as there are 2 items in the list and JavaScript uses zero indexing for array items. However, the position variable is set to 2 because 1 + 1 = 2. There are no items at index of 2 within the list and therefore nothing is deleted due to the logical error.
+> We can use sourcemaps to help debug our code; however, the issue now is that we would have to scan our main.bundle.js file to click somewhere to open the typescript file, then this is not realy a great tool for debugging. If the main.bundle.js file grows larger, it becomes harder to find the correct spot to click for a breakpoint to open the typescript file.
+> We can directly access our typescript files under webpack:// dropdown list found in the Sources developer tab. If we click to expand the ./src/app sub-folder we can view all of the typescript files. We can directly access these files in development of which the file structure is exactly like they are in our project directory. Therefore, we can debug in the chrome developer tools directly.
+> This is another great debug tool at our disposal.
+
+
+///////////////////////////////////////////////////////
+Using Augury to Dive into Angular Apps
+///////////////////////////////////////////////////////
+> This is another tool we can use with Angular apps called Angular Augury.
+> We can install this tool by visiting: https://augury.rangle.io/ which the install link will take us to the browsers store to download and install the extension tool.
+> This extension will add a new Augury tab in the browser's developer tools which we can use to debug Angular apps.
+> This will show our components. We can click on the component to view the State and see the properties on the component and their values. For more complex applications we can also view the injector graph. We can also view our routes and how they work. Finally, we can view our ngModules to see what it imports, what it declares and what it offers us.
+> This is a nice tool to understand the application at runtime and to see the dependencies and to be able to analyse them.
+
+
+///////////////////////////////////////////////////////
+Conclusion
+///////////////////////////////////////////////////////
+> These three tools and techniques allow us to debug our applications and create great Angular applications.
