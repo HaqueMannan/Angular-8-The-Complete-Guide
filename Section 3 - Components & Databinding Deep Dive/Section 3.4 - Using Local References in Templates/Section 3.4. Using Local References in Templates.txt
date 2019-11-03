@@ -1,0 +1,27 @@
+> To get/use data at the point of time we click a button we can achieve this without two-way databinding by using local references.
+   
+   BEFORE TWO-WAY BINDING:
+   cockpit.component.html:
+      <input type="text" class="form-control" [(ngModel)]="newServerName">
+   
+   AFTER LOCAL REFERENCE:
+   cockpit.component.html:
+      <input type="text" class="form-control" #serverNameInput>
+      <button (click)="onAddServer(serverNameInput)"></button>
+
+   cockpit.component.ts:
+      newServerContent = '';
+      onAddServer(nameInput: HTMLInputElement) { 
+         console.log(nameInput, nameInput.value)
+         this.serverCreated.emit({ serverName: nameInput.value, serverContent: this.newServerContent })
+      }
+
+> A local reference can be placed on any html element and not only on a input element and we add it by using the hash tag (#) followed by the name of our choice.
+> This reference will hold a reference to the element it is assigned to with all of its properties and not just to the value we entered inside of it.
+> We can use the local reference anywhere inside of our .component.html template file and not inside of the .component.ts file.
+> We can pass the data from the .component.html to the .component.ts file by passing it through a function as an argument.
+> The local reference gives us the element with all of its properties and therefore we can access the element value.
+> What we can access will depend on which kind of element we place our local reference on and not all elements have the same properties (we know that a input element has a value property we can access).
+> We no longer require to create properties to store the data as we did for two way databinding as we can access the local reference value.
+
+> Local references allows us to get access to some elements in our template and then use it to either directly in the template or pass it onto our .component.ts file to use it in the TypeScript code.
