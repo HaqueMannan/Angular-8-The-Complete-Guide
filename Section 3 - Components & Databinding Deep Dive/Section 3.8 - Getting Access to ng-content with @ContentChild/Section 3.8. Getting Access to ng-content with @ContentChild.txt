@@ -1,0 +1,38 @@
+> In Angular 8 the syntax for using @ContentChild() decorator requires a second argument and needs to be applied to all usages of @ContentChild().
+   @ContentChild('contentParagraph', {static: true}) paragraph: ElementRef;
+
+> If we plan on accessing the selected element inside of ngOnInit() we must set the static option value to true.
+> If we do not access the selected element in ngOnInit but anywhere else in our component, we would set the static option value to false instead.
+> This is a temporary adjustment which will not be required once Angular 9 is released in November 2019.
+
+
+> If we have a content which we have projected into another component element, if we want to place a local reference within tis projected element and want access to it outside of the component template, we would use @ContentChild decorator. For example:
+
+   app.component.html:
+      <app-server-element>
+         <p class="card-text" #contentParagraph>
+      </app-server-element>
+
+   server-element.component.ts:
+      import { Component, OnInit, ViewChild, ElementRef, ContentChild } from '@angular/core';
+      export class ServerElementComponent implements OnInit {
+         @ContentChild('contentParagraph', { static: true }) paragraph: ElementRef;
+
+          ngOnInit() {
+            console.log('ngOnInit called!');
+            console.log('Text Content of Paragraph: ' + this.paragraph.nativeElement.textContent);
+         }
+
+         ngAfterContentInit() {
+            console.log('ngAfterContentInit called!');
+            console.log('Text Content of Paragraph: ' + this.paragraph.nativeElement.textContent);
+         }
+      }
+
+> The @ViewChild will not work in the server-element component because it is not part of the view, it is part of the content. This is why we have separate hooks of AfterContentInit and AfterViewInit.
+> We have @ContentChild which also needs to be imported from @angular/core.
+> The @ContentChild syntax setup is exactly the same as the @ViewChild syntax.
+> Just like the @ViewChild, we cannot access the content until after ngAfterContentInit hook.
+> This allows us to access content from another component which is then passed on via ngAfterContentInit.
+> The above demonstrates this with console.log() of the paragraph textContent. When we first call console.log() on ngOnInit, there is no text content of the paragraph but on the second call on ngAfterContentInit we can access the text content of the paragraph.
+> This demonstrates the timing of hooks and when we can have access to projected child element contents.
