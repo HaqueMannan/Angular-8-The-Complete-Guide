@@ -1,0 +1,130 @@
+> We are able to split our apps into multiple components which is why we use components.
+> however, the one issue with this approach is that we need to pass data between these components.
+> We have learned the basics about property and event binding in a component ts and html files. 
+> This is the behaviour we require in our own components. We need to send data into a component or receive an event.
+> Angular provides us with tools to implement this flow. We can use property and event bindings on:
+   - HTML Elements (native properties & events)
+   - Directives (custom properties & events)
+   - Components (custom properties & events)
+
+> We can use properties and events on our own components and bind to our own custom properties and events.
+
+
+Custom Property Binding:
+> We should comment out both the onAddServer() and onAddBlueprint() block code to prevent the app from crashing for now.
+> In the server-element.component.html file we try to access a single server .element property. Therefore, we should create a property in the server-element.component.ts file which represents an element. We can set the property as a type of JavaScript object using the curly brackets and the properties that the objects requires.
+
+   element: {type: string, name: string, content: string};
+
+> This is our type definition setup for the element property that we want to use in our html code e.g. element.name and element.type, etc.
+> This element/property is still part of the server-elementComponent only. We cannot access it from outside of this component.
+> So in our AppComponent if we have the following code in the .ts file for our serverElements array:
+
+   export class AppComponent {
+      serverElements = [{ type: 'server', name: 'Testserver', content: 'Simply a test!' }];
+   }
+
+> In the AppComponent html file we want to loop through the serverElements array and on our server-elementComponent we have our element property in that component. We want to be able to access this server-elementComponent element from outside of this component.
+
+> By default all properties of of components are only accessible inside of these components and not from the outside.
+> This is generally a good thing as you do not want to make all of the properties bindable from outside of the component.
+> We have to be explicit of which properties we want to expose to the outer scope.
+> To allow the parent element to be able to the child element's properties, we need to add something to that element property. We need to add a decorator.
+> The @Input() decorator requires to be executed as a function and must be imported from @angular/core.
+
+   server-element.component.ts:
+      import { Component, OnInit, Input } from '@angular/core';
+      export class ServerElementComponent implements OnInit {
+         @Input() element: {type: string, name: string, content: string};
+      }
+   
+   app.component.ts:
+      export class AppComponent {
+         serverElements = [{ type: 'server', name: 'Testserver', content: 'Simply a test!' }];
+      }
+   
+   app.component.html:
+      <app-server-element *ngFor="let serverElement of serverElements" [element]='serverElement'></app-server-element>
+
+> With this @Import in place, we are now successfully exposing the element property to the outer scope so that any parent component (i.e. any component hosting the server-elementComponent through the selector) is now able to bind to the element.
+> We can now bind the element property from the server-element.component.ts element property that has been exposed.
+> We should see the server-elementComponent rendered to the screen.
+
+> This is how we can setup custom property binding on our own components exposing our own properties to the components where we implement these components through the selector.
+
+> To set an alias, we can pass an argument into @Input() with the property name as we wnat to have it outside of the component for example:
+   server-element.component.ts:
+      @Input('srvElement') element: {type: string, name: string, content: string};
+   
+   app.component.html:
+      <app-server-element *ngFor="let serverElement of serverElements" [srvElement]='serverElement'></app-server-element>
+
+> To access the element outside, we need to reference the alias. This lets angular know which element we are trying to access from the exposed property.
+> When we setup an alias, the element property name will no longer work in the outside scope and we must now use the alias name.
+
+
+Custom Event Binding:
+> In property binding, we learned how to pass data from the parent to the child component. We now want to be able to move in the other direction whereby when the child component changes it notifies of the data change to the parent component which implements it.
+> For example if we add a new server in the CockpitComponent, we want to notify the AppComponent of this change.
+> We can create events for after a button click event has been completed such as onServerAdded() in our app.component.ts file. We want to be able to pass the information from the CockpitComponent to the AppComponent.
+> The AppComponent is the central place for our app which manages the array of servers.
+> We can create our own custom Event to achieve this.
+
+   app.component.html:
+      <app-cockpit (serverCreated)="onServerAdded($event)"></app-cockpit>
+
+   app.component.ts:
+      ...
+      onServerAdded(serverData: { serverName: string, serverContent: string }) {
+         this.serverElements.push({
+            type: 'server',
+            name: serverData.serverName,
+            content: serverData.serverContent
+         });
+      }
+
+> We can use the $event to expect some data and capture it such as an object which gives us the required information about the server such ass the name and the content.
+> We get the data from onServerAdded() and we call on onServerAdded() once our custom event occurs on the cockpit component and this event should give us the data we expect to get and we capture it on the $event object.
+> In the CockpitComponent we need to emit our own custom event.
+
+   cockpit.component.ts:
+      import { Component, OnInit, EventEmitter, Output } from '@angular/core';
+      export class CockpitComponent implements OnInit {
+         @Output() serverCreated = new EventEmitter<{ serverName: string, serverContent: string }>();
+
+         onAddServer() {
+            this.serverCreated.emit({ serverName: this.newServerName, serverContent: this.newServerContent })
+         }
+      }
+
+> To make the properties as new custom events we need to assign them as new EventEmitter and this needs to be imported from @angular/core.
+> EventEmitter is a generic type and is indicated in TypeScript using the greater than and less than signs (<>).
+> We simply define the event data we are going to emit. This is going to be the object we expect in the AppComponent.
+> we call the parenthesis at the end to call the constructor of EventEmitter and create a new event emitter object which is now stored in our serverCreated property.
+
+> The EventEmitter is the first step which is an object in the angular framework which allows us to emit our own custom events.
+> On our cockpit onAddServer() method we can now call on the serverCreated property the emit() method. This will emit a new event of of our type i.e. using the serverCreated EventEmitter.
+> We are emitting our own events and passing the data, however, we need to make the events to be listen outside of the component. We use the @Output() decorator to achieve this.
+> We need to make sure we import Output from @angular/core.
+
+> With all of this in place, we can successfully emit the custom event. We now have a workable application again but now split up into multiple components which can communicate with each other.
+> Component communicate is a key component to Angular applications.
+
+> Just like @Input() to add an alias to our custom events, we pass in an argument to our @Output() decorator.
+
+   cockpit.component.ts:
+      @Output('newServer') serverCreated = new EventEmitter<{ serverName: string, serverContent: string }>()
+   
+   app.component.html:
+      <app-cockpit (newServer)="onServerAdded($event)"></app-cockpit>
+
+> We now need to reference the alias wherever we are trying to listen to this custom event.
+
+
+Summary:
+> The @Input provides us the ability to make our properties bindable from outside i.e. from the Parent to the Child Component. 
+> The @Output provides us the ability to make our own event emitters bindable from outside i.e. from the Child to the Parent Component.
+> Both are such important features in our application which really allow us to make our application very dynamic and use many components and have them talk to each other.
+> The issue we have is if we want to have two chile components sitting next to each other, it can get complicated i.e. to emit an event in one component to change something in the parent component and then pass this new data down to the second child component.
+> These chains of inputs and outputs can really grow more complex and there may be a better tools/process in those use cases.
+> In a use case where we need to pass data between the Parent and Child, the input and output is the perfect tool for this type of use case.
