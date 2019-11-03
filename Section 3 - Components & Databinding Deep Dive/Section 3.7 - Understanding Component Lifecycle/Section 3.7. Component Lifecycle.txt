@@ -1,0 +1,115 @@
+> What is the ngOnInit() method that is added on every component created through the angular-cli and what does it do?
+> ngOnInit() is a lifecycle hook and angular supports a couple of lifecycle hooks.
+
+> If a new component is created/instantiated in Angular (Angular is responsible for creating the components i.e. when it find one of our selectors it will instantiate a new version of that component and add it into the DOM); Angular goes through a couple of different phases in this creation process.
+> Angular will provide us with a chance to hook into these phases and execute some code.
+> We can hook into these phases by implementing some methods that Angular will call if they are present.
+
+Lifecycle Phases: Stage) Lifecycle method - when called
+1) ngOnChanges() - called after a bound input property changes
+2) ngOnInit() - called once the component is initialised
+3) ngDoCheck() - called during every change detection run
+4) ngAfterContentInit() - called after content (ng-content) has been projected into view
+5) ngAfterContentChecked() - called every time the projected content has been checked
+6) ngAfterViewInit() - called after the component view (and child views) has been initialised
+7) ngAfterViewChecked() - called every time the view (and child views) has been checked
+8) ngOnDestroy() - called once the component is about to be destroyed
+
+> The ngOnChanges can be called multiple times.
+> The ngOnInit get called when the component has been initialised and does not mean that we can see it as it has not been added to the DOM, however, Angular has finished the basic initialisation and our properties can now be accessed and initialised i.e. the object was created. The ngOnInit will un after the constructor.
+> The ngDoCheck can be called multiple times for whenever a change detection is run. A change detection is a system by which Angular determines whether something changed inside of a component and whether it needs to change something inside of the component template for example, a property has changed which is displayed in the template.
+> The ngAfterContentInit is called whenever the content which is projected via ng-content has been initialised i.e. not the view of the component itself but instead the view of the parent component especially the part that will get added to the component through ng-content.
+> The ngAfterViewInit runs when our own component view has been rendered.
+> the ngOnDestroy get called when we destroy a component for example if we place ngIf on a component and this gets set to false and therefore it is removed from the DOM. This allows us to perform some clean up work as it is called right before the object itself will be destroyed by Angular.
+
+
+Lifecycle Methods in Action Example:
+   server-element.component.ts:
+      import { Component, OnInit, Input, OnChanges, SimpleChanges } from '@angular/core';
+      export class ServerElementComponent implements OnInit, OnChanges {
+         @Input('srvElement') element: {type: string, name: string, content: string};
+
+         constructor() {
+            console.log('constructor called!');
+         }
+
+         ngOnChanges(changes: SimpleChanges) {
+            console.log('ngOnChanges called!');
+            console.log(changes);
+         }
+
+         ngOnInit() {
+            console.log('ngOnInit called!');
+         }
+
+         ngDoCheck() {
+            console.log('ngDoCheck called!');
+         }
+      }
+
+> We can use console.log() to see when the methods are called in the developer tool JavaScript console for both the constructor and ngOnInit().
+> If we reload the application we would see right at the top the two messages printed. For every new server we add, we would see the messages again because a new instance of the component is created and all these hooks are executed again because this is a brand new instance and has no connection besides the class it was created off.
+> It is good practice to implement the hook interface to the export class as seen with OnChanges. This is true with all hooks. We would need to import the interface from @angular/core.
+Note: implementing the method alone would do the trick (as seen with ngDoCheck) but it is good practice to be very explicit about which interfaces the component uses or which methods the component would have.
+> the OnChanges is the only hook which receives an argument. The argument is changes which is the type of SimpleChanges which also needs to be imported from @angular/core.
+> If we view the changes object in the console, we would see a JavaScript object which has element which is a type of SimpleChange and the element is our bound property defined @Input. Angular simply provides us some information i.e. the currentValue, firstChange and previousValue.
+
+> The ngOnChanges can be called multiple times. To demonstrate this we can change the app code to create a new button which changes the components name to trigger the ngOnChanges hook.
+> This button will not trigger the constructor or ngOnInit lifecycle methods as we are not creating a new component with the button.
+
+   app.component.html:
+      <button class="btn btn-primary" (click)="onChangeFirst()">
+         ngOnChanges Demo - Change First Element
+      </button>
+      <app-server-element *ngFor="let serverElement of serverElements" [name]="serverElement.name">
+
+   app.component.ts:
+   export class AppComponent {
+      serverElements = [{ type: 'server', name: 'Testserver', content: 'Simply a test!' }];
+
+      onChangeFirst() {
+         this.serverElements[0].name = 'Changed!';
+      }
+   }
+
+   server-element.component.html:
+      <div class="card-header">{{ name }}</div>
+   
+   server-element.component.ts:
+      export class ServerElementComponent implements OnInit, OnChanges {
+         @Input() name: string;
+      }
+
+> This change to the code will simply change the existing serverElements item at index [0] name property to Changed! which would demonstrate the trigger of the ngOnChanges() lifecycle method multiple times without triggering the constructor and ngOnInit lifecycle methods again.
+> We would now see for the name property the currentValue, firstChange now set to false and the previousValue before the change.
+
+> The ngDoCheck is called whenver Angular checks for any changes and there are a couple of changes which trigger this method such as a click event, a promise giving back data, etc. Therefore, there are a lot of triggers for ngDoCheck and is also not a place where we want to run any powerful coding because this will cost a lot on performance.
+
+> We can use the above to check how and when each lifecycle methods are called to understand lifecycle methods in action. Refer to the cmd-databinding application code for all lifecycle method in action demo.
+
+
+Lifecycle Hooks and Template Access:
+> We learned about @ViewChild which we can use to get access to an element from our template/DOM. So if we do this with the server-element component like so:
+
+   server-element.component.html:
+      <div class="card-header" #heading>{{ name }}</div>
+
+   server-element.component.ts:
+   import { Component, OnInit, Input, OnChanges, SimpleChanges, ViewChild, ElementRef } from '@angular/core';
+   export class ServerElementComponent implements OnInit, OnChanges {
+      @ViewChild('heading', { static: true }) header: ElementRef;
+
+      ngOnInit() {
+         console.log('ngOnInit called!');
+         console.log('Text Content: ' + this.header.nativeElement.textContent);
+      }
+
+      ngAfterViewInit() {
+         console.log('ngAfterViewInit called!');
+         console.log('Text Content: ' + this.header.nativeElement.textContent);
+      }
+   }
+
+> With @ViewChild setup, we would expect that we can't access the element before we used ngAfterViewInit method.
+> On the ngOnInit hook method we would not see any textContent from the div element. However, when we call it again after the ngAfterViewInit hook method we do see the textContent from the div element.
+> This is the difference between the points in time when the hooks run. AfterViewInit gives us access to the template elements which we can access and use it's values and so on; however, before this hook has been reached we can't get access to the template element in the DOM because it has not been rendered.
