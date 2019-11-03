@@ -1,0 +1,35 @@
+> We have much more tools to interact between different components within our application allowing our apps to be more dynamic.
+> There is one more way to pass data around our components which is projecting content into components with ng-content.
+
+   server-element.components.html:
+      <div class="card-body">
+         <p class="card-text">
+            <strong *ngIf="element.type === 'server'" style="color: red">{{ element.content }}</strong>
+            <em *ngIf="element.type === 'blueprint'">{{ element.content }}</em>
+         </p>
+      </div>
+
+> In the above example we check whether we have a element type of server or blueprint and there is nothing wrong with this approach. However, sometimes we have complex html code like the above which we want to pass into a component from outside the component template. For example the below:
+
+   server-element.components.html:
+      <div class="card-body">
+         <ng-content></ng-content>
+      </div>
+   
+   app.component.html:
+      <app-server-element *ngFor="let serverElement of serverElements" [srvElement]='serverElement'>
+         <p class="card-text">
+            <strong *ngIf="serverElement.type === 'server'" style="color: red">{{ serverElement.content }}</strong>
+            <em *ngIf="serverElement.type === 'blueprint'">{{ serverElement.content }}</em>
+         </p>
+      </app-server-element>
+
+> We want to add the html code in the app.component.html opening and closing <app-server-component> component element (replacing element with serverElement variable).
+> However, this will not work. We do not get an error but the content is also not displaying anymore. This is the default behaviour.
+> Everything we place between the opening and closing component tag is lost by default and is simply removed from the DOM and Angular will not care about the content between the our own component tags.
+> To change this behaviour we can use a special directive that we can add in the server-element component template where we want to render the content.
+> The <ng-content></ng-content> is a directive even though it does not look like a component but it does have its own template.
+> The <ng-content></ng-content> serves as a hook that we can place in our own component to mark he place for Angular where it should add any content that it finds between the opening and closing tag of that component.
+
+> The content hook will project everything inside of the opening and closing tags into our component template file i.e. server-element.component.html file.
+> If we have complex html code, then property binding is not the best solution because angular will escape html text to prevent cross-site scripting attacks from happening (we could work around that) but ng-content is the best solution to have at our disposal.
