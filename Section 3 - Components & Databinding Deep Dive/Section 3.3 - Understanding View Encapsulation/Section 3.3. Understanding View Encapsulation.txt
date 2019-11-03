@@ -1,0 +1,31 @@
+> In our CSS definition for our components we define the CSS styles. For example:
+   p { color: blue; }
+> This in effect should effect all paragraphs for our whole application regardless of which CSS file the CSS styling is located. Under CSS the rule is applied to the whole document.
+> However, in angular the CSS style only applies to the component it has been linked to.
+> Angular enforces a behaviour which is not the default of the browser.
+> While the .component.css has the goal of encapsulating the styles for the component they belong to, this is not the browser's default behaviour but what Angular provides us.
+> We can now make sure whatever styles we define in a .component.css file will only get applied to the component that it belongs to.
+> However, this would now mean we would need to copy some global styles to all other components which we want to use the particular style.
+
+> If we inspect the element in the developer tool we would notice that the selector has now changed:
+   p[_ngcontent-pqv-c2] { color: blue; }
+> This is what Angular creates to ensure the style is encapsulated into the component which has the specific class. This is how styles are encapsulated to their components.
+> It gives the same class attribute to all elements in a component.
+> Therefore, Angular enforces style encapsulation using these unique class attribute names it creates and assigns to the component elements in order to apply the style to a particular component.
+> This kind of emulates the ShadowDOM. The ShadowDOM is a technology, not supported by all browsers, where each element has its kind of own shadow DOM behind it where we can then could assign styles to each individual element.
+> Since the ShadowDOM is not supported by all browsers, this is how Angular emulates it.
+> This is the default behaviour of view encapsulation in Angular.
+
+> To overwrite this default encapsulation, in the .component.ts file we can add to the @Component decorator the encapsulation option.
+
+
+> As the value for the option we can use ViewEncapsulation which needs to be imported from @angular/core and then we can choose between four modes.
+   - .Emulated (default - adds class attributes to elements)
+   - .None (removes the emulated class attributes to elements. Styles will be applied globally)
+   - .Native (uses the ShadowDOM technology. Deprecated)
+   - .ShadowDOM (uses the ShadowDOM technology. Achieves the same result as the emulated mode for browser which supports the technology).
+
+> This option will only apply to the component it is applied to. The other components will use the default Emulated mode.
+> For most cases we would want to choose the emulated mode.
+
+> Conclusion: encapsulation allows us to make sure only our components receive the style we define it and how we can change the encapsulation mode for our components.
