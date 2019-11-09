@@ -1,0 +1,5 @@
+> We cannot have more than one structural directive on the same element. This will give an error, for example:
+   <li *ngFor="let number of numbers" *ngIf="number % 2 == 0">{{ number }}</li>
+
+> There are many attribute directives, ngClass and ngStyle are the two that we have already studied and looked at their behaviours.
+> The square brackets indicates that we are binding to some property on our ngClass directive.
