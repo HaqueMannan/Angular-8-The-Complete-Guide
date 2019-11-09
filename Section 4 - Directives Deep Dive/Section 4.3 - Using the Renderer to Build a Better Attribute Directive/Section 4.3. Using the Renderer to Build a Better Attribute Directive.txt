@@ -1,0 +1,34 @@
+> Accessing elements directly like the example below is not a good practice. Instead we should use the Renderer tool because Angular is also able to render our templates without a DOM.
+   ngOnInit() {
+      this.elementRef.nativeElement.style.backgroundColor = 'green';
+   }
+
+> In the Angular CLI we can use the command to create a directive:
+   - ng generate directive directiveName
+   - ng g d directiveName
+
+> How should we access the elements? We can inject the helper called the Renderer.
+   better-directive.directive.ts:
+      import { Directive, Renderer2, OnInit, ElementRef } from '@angular/core';
+      @Directive({
+      selector: '[appBetterDirective]'
+      })
+
+      export class BetterDirective implements OnIit {
+         constructor(private elRef: ElementRef, private renderer: Renderer2) { }
+         ngOnInit() {
+            this.renderer.setStyle(this.elRef.nativeElement, 'background-color', blue)
+         }
+      }
+
+> We need to import Renderer2 from @angular/core.
+> We can then call on the renderer on the property and we have access to a couple of helper methods we can use to work with the DOM. 
+> For example the setStyle method allows us to set the style of some element. The issue here is that we need some element to set the style. There are many ways in angular to get the element for example injecting the ElementRef.
+> The setStyle takes in a couple of other arguments: we define which element we want to style, the style we want to set, the value of the selected style and finally a flags object to set a couple of flags for the style which is optional.
+> We can apply this new better directive to achieve the same results:
+   app.component.ts:
+      <p appBetterHighlight>Style me with a better directive!</p>
+
+> We are now using the Renderer to acces the DOM. This is a better approach because Angular is not limited to running in the browser. This for example also works with service workers. These are environments where we might not have access to the DOM. So if we try to access the element directly from the DOM, in some circumstances we may get an error. In most circumstances we probably will know if our app is going to run in the browser or not, however, this approach is a better practice to use the renderer for DOM access and use the methods the renderer provides to access the DOM.
+
+> To learn more methods available on Renderer2: https://angular.io/api/core/Renderer2
