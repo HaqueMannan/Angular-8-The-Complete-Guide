@@ -1,0 +1,56 @@
+@HostListener:
+> We can make our custom directives interactive based on some events occurring on the element that the directive sits on.
+> The quick and easy method to achieve this is to set the @HostListener decorator which needs to be imported from @angular/core.
+> We add this decorator to some method we want to execute on the host event.
+
+   better-highlight.directive.ts:
+      import { Directive, Renderer2, OnInit, ElementRef, HostListener } from '@angular/core';
+      @Directive({
+         selector: '[appBetterHighlight]'
+      })
+      export class BetterHighlightDirective implements OnInit {
+         ...
+         @HostListener('mouseenter') mouseover(eventData: Event) {
+            this.renderer.setStyle(this.elRef.nativeElement, 'background-color', 'blue');
+         }
+
+         @HostListener('mouseleave') mouseleave(eventData: Event) {
+            this.renderer.setStyle(this.elRef.nativeElement, 'background-color', 'transparent');
+         }
+      }
+
+> The @HostListener() takes in a string which is the argument input name. The mouseenter is one of the many events supported by the DOM element that the directive sits on.
+> We use the @HostListener to listen to the mouse enter host event to trigger the mouseover (which we could have named anything) method.
+> We can also access the event data e.g. eventData which has the type of Event. We can also listen to custom events here as well.
+> The above now created a mouse hover effect that turns on and off the background colour on the host event.
+> We now have a reactive/interactive directive sing the @HostListener to listen to any events.
+
+
+@HostBinding
+> We have an even easier way of changing the background without having to use the renderer if that is all we want to do with the directive.
+> The @HostBinding also needs to be imported from @angular/core.
+
+   better-highlight.directive.ts:
+      import { Directive, Renderer2, OnInit, ElementRef, HostListener } from '@angular/core';
+      @Directive({
+         selector: '[appBetterHighlight]'
+      })
+      export class BetterHighlightDirective implements OnInit {
+         ...
+         @HostBinding('style.backgroundColor') backgroundColor: string;
+
+         @HostListener('mouseenter') mouseover(eventData: Event) {
+            this.backgroundColor = 'blue';
+         }
+
+         @HostListener('mouseleave') mouseleave(eventData: Event) {
+            this.backgroundColor = 'transparent';
+         }
+      }
+
+> We need to bind the @HostBinding to some property which value will become important. So in the example we created a backgroundColor property with the type of string.
+> We assign a default initial value of backgroundColor so that it does not error the first time we hover.
+> In @HostBinding we pass in a string defining to which property of the hosting element we want to bind for example the style.backgroundColor property using camel case.
+> The camel case is important here because we are accessing teh DOM property which does not know the dashes (-).
+> This will tell Angular that on the element that this directive sits access the style property and then access the background-color sub property and set this value equal to whatever thr backgroundColor: string is set to.
+> This achieves the same result as the @HostListener but without using the renderer (although it is not wrong to use the renderer) i.e. an alternative approach.
