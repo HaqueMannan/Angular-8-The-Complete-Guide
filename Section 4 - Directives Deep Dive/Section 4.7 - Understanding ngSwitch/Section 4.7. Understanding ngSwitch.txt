@@ -1,0 +1,20 @@
+> The ngSwitch is another useful structural directive.
+> This allows us to use a switch statement which is very useful in scenarios where we are creating a lot of *ngIf conditions whereby the *ngSwitch may be a better solution.
+> Below is a simple example demonstrating the ngSwitch directive:
+
+   app.component.ts:
+      ...
+      export class AppComponent {
+         value = 10;
+      }
+
+   app.component.html:
+      <div [ngSwitch]="value">
+         <p *ngSwitchCase="5">Value is 5</p>
+         <p *ngSwitchCase="10">Value is 10</p>
+         <p *ngSwitchDefault>Value is Default</p>
+      </div>
+
+> We bind a property to ngSwitch using property binding, in the above this is value. This will act as the condition for the switch statement i.e. what we want to check.
+> We now have a couple of cases we want to cover. We add to the element *ngSwitchCase structural directive and we pass in the value for the case as an argument.
+> The *ngSwitchDefault acts as the default fallback capture case which gets triggered if all other cases return false.
