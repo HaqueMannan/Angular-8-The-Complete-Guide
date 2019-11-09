@@ -1,0 +1,40 @@
+> We can build our own attribute directives. To create a basic directive we would create a .directive.ts file.
+> We need to import Directive from angular/core and the @Directive() decorator takes in an object to configure the directive.
+
+   basic-directive.directive.ts:
+      import { Directive, ElementRef, OnInit } from "@angular/core";
+      @Directive({
+         selector: '[appBasicDirective]'
+      })
+
+      export class BasicDirective implements OnInit {
+         constructor(private elementRef: ElementRef) {}
+         onInit() {
+            this.elementRef.nativeElement.style.backgroundColor = 'green';
+         }
+      }
+
+> The one options directives would need is a selector. The selector must be a unique selector.
+> Adding the square brackets around the selector value will allow Angular to recognise whenever we add the selector value e.g. appBasicDirective without the square brackets to an element.
+> We can use the constructor to get access to the element that the directive is placed on which Angular provides to us. The elementRef can be named whatever we want but the type must be ElementRef which must be imported from @angular/core.
+> Having access to the element we can now use that element and do something with it which we can do on either the constructor or better the OnInit lifecycle method.
+> We can easily test whether our own attribute directive is working by assigning the background-color to an element implementing our custom directive.
+> Therefore, we are getting access to the element that the directive was placed on and then overwriting the style of that element using the directive.
+
+> To use the directive we have to do two things: 
+   - We have to inform Angular that we have a new directive (just like with Components) by adding it to the app.module.ts declarations.
+   - We have to import the file into the app.module.ts file.
+
+   app.module.ts:
+      import { BasicHighlightDirective } from './basic-highlight/basic-highlght.directive';
+      @NgModule({
+         declarations: [
+            AppComponent,
+            BasicHighlightDirective
+         ], ...
+      }
+
+> With this in place we can use the new custom attribute directive in our .component.ts files without having to use square brackets:
+   
+   app.component.html:
+      <p appBasicDirective>Style me with basic directive!</p>
