@@ -1,0 +1,56 @@
+> If wanted to ship our custom directive, the developer using the custom directive should be able to dynamically set values e.g. the highlight colour. We may even want to do this with our own application.
+> We can use custom property binding as well as custom event binding with our custom directives to make the values dynamical. Note: we would probably not use custom event binding as often.
+
+   better-highlight.directive.ts:
+      import { Directive, Renderer2, OnInit, ElementRef, HostListener, HostBinding, Input } from '@angular/core';
+      @Directive({
+         selector: '[appBetterHighlight]'
+      })
+
+      export class BetterHighlightDirective implements OnInit {
+         @Input() defaultColour: string = 'transparent';
+         @Input() highlightColour: string = 'blue';
+
+         ngOnInit() {
+            this.backgroundColor = this.defaultColour;
+         }
+
+         @HostBinding('style.backgroundColor') backgroundColor: string;
+
+         @HostListener('mouseenter') mouseover(eventData: Event) {
+            this.backgroundColor = this.highlightColour;
+         }
+
+         @HostListener('mouseleave') mouseleave(eventData: Event) {
+            this.backgroundColor = this.defaultColour;
+         }
+      }
+
+   app.component.html:
+      <p appBetterHighlight [defaultColour]="'yellow'" [highlightColour]="'red'">Style me with a better directive!</p>
+
+> We use @Input to create custom properties and we can set some default properties which can be overwritten from outside the file.
+> In the html template file we can use the custom directive and bind values to the custom properties to overwrite the default values to custom values that we choose.
+> We can use ngOnInit to set the default colour after the values become available before the element is rendered to prevent any weird initial transparent background colour bug.
+> We now have two extra directive like looking things on our element. Angular will know whether we want to bind to a property of the element or to a property our our directive by simply checking our own directives first before it reaches the native properties of the element.
+> We can bind to properties of our own directives by simply placing the properties on the same element enclosed in square brackets.
+
+Important Notes:
+> If we use class property binding and set an alias for a @Input() for a custom property which is the same name as the custom directive, we would then need to use the square brackets around the directive name in order to set custom property value as seen below:
+   better-highlight.directive.ts:
+      ...
+      export class BetterHighlightDirective implements OnInit {
+         @Input() defaultColour: string = 'transparent';
+         @Input('appBetterHighlight') highlightColour: string = 'blue';
+         ...
+      }
+
+   app.component.html:
+      <p [appBetterHighlight]="'red'" [defaultColour]="'yellow'">Style me with a better directive!</p>
+
+
+> One rule for property binding in general, if we pass down a string and currently use square brackets and then single quotation marks, we can take a shortcut of removing the square brackets and the single quotation marks. This is a special case if we are passing down a string, we can add property binding without the square brackets if we then omit the single quotation marks between the double quotation marks as seen below:
+   app.component.html:
+      <p [appBetterHighlight]="'red'" defaultColour="yellow">Style me with a better directive!</p>
+
+> We can use the above with official Angular Directives but we should be careful that if we use this, it is really clear that we are using property biding and no one could think that it could be a real attribute existing for the element it is placed on.
