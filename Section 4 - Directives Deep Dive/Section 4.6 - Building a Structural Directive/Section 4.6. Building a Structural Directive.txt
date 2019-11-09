@@ -1,0 +1,71 @@
+What happens behind the scenes on Structural Directives?
+> When creating a structural directive we require a asterisk (*) in front of the directive and this indicates to Angular that we have a structural directive.
+> Behind the scenes Angular will transform the structural directive into something else because there is no asterisk in Angular syntax. There is only property binding, event binding, two-way binding and string interpolation within Angular. There are no asterisk (*) operator.
+> Angular behind the scenes will convert the structural directive usage into something where we end up with the standard tools. Below is an example of a structural directive being converted by Angular:
+
+   Original Structural Directive:
+      <div *ngIf="!onlyOdd">
+         <li class="list-group-item" *ngFor="let even of evenNumbers" [ngClass]="{odd: even % 2 !==0}" [ngStyle]="{backgroundColor: even % 2 !==0 ? 'yellow' : 'transparent'}">
+            {{ even }}
+         </li>
+      </div>
+
+   Converted:
+   <ng-template [ngIf]="!onlyOdd">
+     <div>
+         <li class="list-group-item" *ngFor="let even of evenNumbers" [ngClass]="{odd: even % 2 !==0}" [ngStyle]="{backgroundColor: even % 2 !==0 ? 'yellow' : 'transparent'}">
+            {{ even }}
+         </li>
+      </div>
+   </ng-template>
+
+> The <ng-template> element provided by Angular contains the content we conditionally want to render from the template.
+> We have the same content as before but it is wrapped in the <ng-template> because the <ng-template> is an element which itself is not rendered but allows us to define a template in the end for angular to use once it determines that the template needs to be rendered because of the condition is true.
+> The ngIf uses property binding to bind the value of !onlyOdd i.e. the condition.
+> We now are back to the tools we know that Angular uses without the asterisk (*) which Angular understands the syntax.
+> We do not need to use the proper syntax behind the scenes but it is useful to understand it as this is what our code is transformed into when we use structural directives behind the scenes.
+> Now that we understand this, we can create our own custom structural directives.
+
+
+Custom Structural Directive:
+> We can use the Angular-CLI to create a new directive as we have seen before. The --skipTests flag will ensure that the test files is not created and we can specify the folder we want to add the file to rather than the default app directory location:
+   - ng g d /newFolderPath/directoryName --skipTests
+
+   unless.directive.ts:
+      import { Directive, Input, TemplateRef, ViewContainerRef } from '@angular/core';
+      @Directive({
+         selector: '[appUnless]'
+      })
+
+      export class UnlessDirective {
+         @Input() set appUnless(condition: boolean) {
+            if (!condition) {
+               this.vcRef.createEmbeddedView(this.templateRef);
+            } else {
+               this.vcRef.clear();
+            }
+         }
+
+         constructor(private templateRef: TemplateRef<any>, private vcRef: ViewContainerRef) { }
+      }
+
+> We can use the set keyword to set a setter. This now turns the input into a method. It is important to understand that this is still a property but it is just a setter of the property which is a method which gets executed whenever the property changes. It of course changes whenever it changes outside of this directive.
+> The custom property needs to access the value as an input which we know would be a boolean. Note: we could have called value whatever we wanted e.g. condition.
+> To render the content i.e. the template, we need to add TemplateRef and the ViewContainerRef to the constructor.
+> The template can be injected by adding templateRef (or any name we would like to call it) with a type of TemplateRef<any> which has a type of any and this needs to be imported from @angular/core (similar to ElementRef).
+> The ViewContainerRef is where we should render the template and must also be imported from @angular/core.
+> With these two tools available, we can use them to render the content.
+> The createEmbeddedView() method creates a view in this view container. The view is simply our templateRef.
+> We can use the .clear() method to remove everything from this place in the DOM.
+> We now have our own custom structural directive setup which we can use in our template files which can replace the *ngIf structural directive.
+
+   app.component.ts:
+      <div *appUnless="onlyOdd">
+         <li class="list-group-item" *ngFor="let even of evenNumbers" [ngClass]="{odd: even % 2 !==0}" [ngStyle]="{backgroundColor: even % 2 !==0 ? 'yellow' : 'transparent'}">
+            {{ even }}
+         </li>
+      </div>
+
+> The asterisk (*) is still important because this is a structural directive, otherwise we would have had to manually write the content using the <ng-template> syntax which occurs behind the scenes.
+> We pass in onlyOdd property because the appUnless directive will check if it is not onlyOdd.
+> It is important to note the set method name must be the same name as the directive otherwise we would run into an error. This is because in the template we are setting a custom property value to our directive.
