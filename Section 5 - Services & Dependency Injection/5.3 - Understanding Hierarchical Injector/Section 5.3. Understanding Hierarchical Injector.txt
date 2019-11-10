@@ -1,0 +1,20 @@
+> With the changes made in the previous section, our app seems to be broken although no errors are thrown.
+> The application in fact is working correctly, however, we are using Services incorrectly in this specific case.
+> The Angular dependency injector is a hierarchical injector. This means that if we provide a service in some place of our application e.g. on one of our component. The Angular framework knows how to create an instance of that service for that component and all of its child components.
+> The parent component and all of its child components and the child's child components and so on, will receive the same instance of the service.
+> There are other places we can provide a service to - below is the hierarchy:
+
+   Highest Level:    AppModule               Same instance of Service is available application-wide
+                     AppComponent            Same instance of Service is available for all components (but                          not for other Services)
+   Lowest Level:     Any other Component     Same instance of Service available for the component and all                                             its child components
+
+> The instances do not propagate up, they only go down the tree of components.
+> The lowest level is a single component with no child components. If we provide a service there, this component will have its own instance of the Service and will only be available for this component as it does not have any child components of its own. Therefore, this will even actually override if we were to provide the same service on a higher level. This is exactly what was occurring in the previous section.
+
+> This injection behaviour is not a bug as it is intended because we might have an application where we want to have many different instances of the same service where we absolutely do not want to have the same instance. However, there are times we do want to have the same instance.
+> In the previous section we created three instances of our Service: 
+   - the first is created in AppComponent which get its own instance of the service as do all of the child components (New-childComponent and AccountComponent are children components).
+   - the second and third instances of the service is provided again in both the New-childComponent and AccountComponent which override the instance we would have got from the AppComponent instance.
+> To fix this we would simply remove the Service from the @Component providers array for the child components but keep it within the constructor method.
+> The constructor tells Angular we want an instance of the Service while the providers array tells Angular which instance.
+> This little change will make the application work as we would expect it in this case scenario whereby we are using the same instance of the parent component.
