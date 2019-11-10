@@ -1,0 +1,60 @@
+> Services provides solutions to two use case which are duplication of code and data storage.
+> Services allows our components to communicate with each other.
+> Services acts as another class/piece in our Angular application which we can add which acts as a central repository/business unit. This is something we can store/centralise our code.
+> Services allows us to future proof our applications by having a central data storage so if we create future components, it can take advantage of the shared data.
+
+> To create a service we need to create a file with the .service.ts file extension.
+> We would export a TypeScript class as we would with a normal component using Service within the class name to be explicit about what the class does.
+  
+   logging.service.ts:
+      export class LoggingService {
+         logStatusChange(status: string) {
+            console.log('A server status changed, new status: ' + status);
+         }
+      }
+
+> A service is simply a normal TypeScript class and we do not add any decorator to it as we did for components with @Component and directives with @Directive decorators.
+> The above is enough to create a service and we can start to create methods and properties on this Service class object.
+> With the above, we have now centralised the logStatusChange code which we can now use this service in our other components.
+
+> Important Note: the below example of importing the service class declaring a variable and assigning it as a new class object of LoggingService and then using the object method would continue to work; however, it is important to note that this is the incorrect way of using services in Angular.
+
+   new-account.component.ts:
+      import { Component, EventEmitter, Output } from '@angular/core';
+      import { LoggingService } from '../logging.service';
+      @Component {...}
+      export class NewAccountComponent {
+         ...
+         const service = new LoggingService();
+         service.logStatusChange(accountStatus);
+      }
+
+> Angular offers us a much better way of getting access to our services and we should never use the above syntax to manually create the instances of our services when implementing services.
+> Angular's Dependency Injector allows us to implement Services into our components.
+> A dependency is something that a class of ours will depend on, for example the new-account component depends on the LoggingService because we would want to call a method in that service. The Dependency Injector simply injects this dependency i.e. injects an instance of this class into our component automatically.
+> All we need to do is inform Angular that we require such an instance of the Service.
+
+   new-account.component.ts:
+      import { Component, EventEmitter, Output } from '@angular/core';
+      import { LoggingService } from '../logging.service';
+      @Component {
+         ...,
+         providers: [LoggingService]
+      }
+      export class NewAccountComponent {
+         constructor(private: loggingService: LoggingService) {}
+         ...
+         this.loggingService.logStatusChange(accountStatus)
+      }
+
+> We use the constructor on the class to bind the service to a property (we can choose any name for this property e.g. loggingService as seen in the above example).
+> The important part is to add the correct type assignment to the property and this is not optional. The type has to be the class we want to get injected i.e. the Service name. We must also make sure to import the service.
+> This will inform Angular that we need an instance of the LoggingService.
+> Angular is responsible for creating the instances of our components and since Angular is responsible for instantiating our components, Angular will need to construct them correctly. Therefore, if we define in the constructor that we require some argument, Angular will recognise this and it will try to give us the argument i.e. the instance of the Service because we defined its type.
+> Angular knows what we want but does not know how to give us such instance. The final step is to provide a service.
+> Provide simply means that we tell Angular how to create the service. To do this we simply add a single line to the @Component decorator which is the providers option array.
+> We pass in the Type of what we want to be able to get provided i.e. the Service name.
+> Angular will now when analysing the component recognise this and be able to give us such a Service. When  it actually builds/constructs the component, it will see that we want such an instance and it will know how to give such an instance of the Service.
+> We can access anywhere in our Component the service property and access its methods.
+> This is a better method than creating the service instance manually because it will allow us to stay within the Angular ecosystem. Angular knows how our application works which is an advantage we will see when using Services and Dependency Injection.
+> Services will allow us to adopt the DRY (Don't Repeat Yourself) principal to programming.
