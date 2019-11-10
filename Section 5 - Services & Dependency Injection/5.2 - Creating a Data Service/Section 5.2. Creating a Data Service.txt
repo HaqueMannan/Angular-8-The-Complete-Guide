@@ -1,0 +1,77 @@
+> Another typical use case for Services is to store and manage our data.
+> Below is an example of an Account Service which holds our accounts array and methods.
+
+   accounts.service.ts:
+      export class AccountService {
+         accounts = [
+            { name: 'Master Account', status: 'active' },
+            { name: 'Testaccount', status: 'inactive' }
+         ];
+         addAccount(name: string, status: string) {
+            this.accounts.push({name: name, status: status});
+         }
+         updateStatus(id: number, status: string) {
+            this.accounts[id].status = status;
+         }
+      }
+
+   app.component.ts:
+      import { Component, OnInit } from '@angular/core';
+      @Component({
+         ...,
+         providers: [AccountsService]
+      })
+      export class AppComponent implements OnInit {
+         accounts: { name: string, status: string }[] = [];
+         constructor(private accountsService: AccountsService) {}
+
+         ngOnInit() {
+            this.accounts = this.accountsService.accounts;
+         }
+      }
+
+> Our component would continue to have a property of accounts whereby we define the type of the properties in the array. This should initially be set to an empty array.
+> Now that we have our AccountsService, we can inject it into our component using the constructor.
+> We can use the OnInit lifecycle hook to inject the Service accounts array into the components accounts property array.
+
+> We can implement the two service methods to our components which require them, for example:
+
+   new-accounts.component.ts:
+      import { Component } from '@angular/core';
+      import { LoggingService } from '../logging.service';
+      import { AccountsService } from '../accounts.service';
+
+      @Component({
+         ...
+         providers: [LoggingService, AccountsService]
+      })
+      export class NewAccountComponent {
+         constructor(private loggingService: LoggingService, private accountsService: AccountsService) {}
+
+         onCreateAccount(accountName: string, accountStatus: string) {
+            this.accountsService.addAccount(accountName, accountStatus);
+            this.loggingService.logStatusChange(accountStatus);
+         }
+      }
+   
+   account.component.ts:
+   import { Component, Input } from '@angular/core';
+   import { LoggingService } from '../logging.service';
+   import { AccountsService } from '../accounts.service';
+
+   @Component({
+      ...,
+      providers: [LoggingService, AccountsService]
+   })
+   export class AccountComponent {
+      @Input() account: {name: string, status: string};
+      @Input() id: number;
+      constructor(private loggingService: LoggingService, private accountsService: AccountsService) {}
+
+      onSetTo(status: string) {
+         this.accountsService.updateStatus(this.id, status);
+         this.loggingService.logStatusChange(status);
+      }
+   }
+
+> The application will now work without throwing any errors; however, we will notice that when we add a new account or update the account we do not see the changes displayed in the browser.
