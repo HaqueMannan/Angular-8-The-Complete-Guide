@@ -1,0 +1,71 @@
+> Services can clean our application and make the code leaner, more centralised and easier to maintain. We do not have to build these complex @Output and @Input chains where we pass events and properties to get data from component A to component B.
+> In the below example, if we click on a button in our AccountComponent and for some reason we to output something in the NewAccountComponent, normally without Services we would have to emit an event in the AccountComponent that something was clicked or something happened, we would have to catch the event in AppComponent template and then have to pass the new data down via property binding to the component we want to handle it. This is pretty complicated. It is much easier with using Services:
+
+   account.services.ts:
+      import { Injectable, EventEmitter } from "@angular/core";
+      ...
+      export class AccountsService {
+         ...
+         statusUpdated = new EventEmitter<string>();
+      }
+
+   account.component.ts:
+      ...
+      import { AccountsService } from '../accounts.service';
+      @Component({ ... })
+      export class AccountComponent {
+         ...
+         constructor(private accountsService: AccountsService) {}
+
+         onSetTo(status: string) {
+            this.accountsService.updateStatus(this.id, status);
+            this.accountsService.statusUpdated.emit(status);
+         }
+      }
+
+   new-account.component.ts:
+      ...
+      import { AccountsService } from '../accounts.service';
+      @Component({ ... })
+      export class NewAccountComponent {
+         constructor(private accountsService: AccountsService) {
+            this.accountsService.statusUpdated.subscribe(
+               (status: string) => alert('New Status: ' + status);
+            );
+         }
+
+         onCreateAccount(accountName: string, accountStatus: string) {
+            this.accountsService.addAccount(accountName, accountStatus);
+         }
+      }
+
+> In our account.services we provide an event which we can trigger in one component and listen to another component.
+> The statusUpdated is a new EventEmitter of a type string which we can now trigger inside the Services methods. However, we can also trigger it within the AccountComponent since we inject the service into the component. We can use the statusUpdated EventEmitter and emit the event and pass in the new status.
+> We are now emitting an event we setup in the Service.
+> The NewAccountComponent can now listen/subscribe to the emitted event. We can the use the alert to display the new updated status from the NewAccountComponent.
+> We have not built any chain of property and event binding; however, we do have cross component communication through a Service with the EventEmitter.
+
+To conclude:
+> This demonstrates how we can use Services to our advantage.
+> We have to make sure we use the correct amount of instances and if we want to inject services into services, we should provide the service on the AppModule level and use @Injectable to the service where we want to inject it in.
+
+Services in Angular 6+:
+> If we are using Angular 6+ we can provide application-wide services in a different way.
+> Instead of adding a service class to the providers[] array in AppModule, we can set the following config in @Injectable:
+
+   @Injectable({providedIn: 'root'})
+   export class MyService { ... }
+
+> The above is exactly the same as:
+   my-service.service.ts:
+      export class MyService { ... }
+
+   app.module.ts
+      import { MyService } from './path/to/my.service'; 
+      @NgModule({
+         ...
+         providers: [MyService]
+      })
+      export class AppModule { ... }
+
+> Using this new syntax is completely optional, the traditional syntax (using providers[] ) will still work. The "new syntax" does offer one advantage though: Services can be loaded lazily by Angular (behind the scenes) and redundant code can be removed automatically. This can lead to a better performance and loading speed although this really only kicks in for bigger services and applications in general.
