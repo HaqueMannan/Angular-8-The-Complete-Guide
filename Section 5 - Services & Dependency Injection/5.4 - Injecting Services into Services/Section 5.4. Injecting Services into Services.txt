@@ -1,0 +1,41 @@
+> The highest possible level is the AppModule.ts file. In this file we have a providers array and we would need to import the Service. This will make sure the whole application receives the same instance of the Service unless it is overridden.
+> With this in place we can now even inject a Service into another Service. 
+> This is not possible by providing it on a Component Level. We must provide on the AppModule level in order to inject into another service.
+
+   app.module.ts:
+      import { AccountsService } from './accounts.service';
+      import { LoggingService } from './logging.service';
+      @NgModule({
+         ...
+         providers: [AccountsService, LoggingService],
+         bootstrap: [AppComponent]
+      })
+      export class AppModule { }
+   
+   account.service.ts:
+      import { Injectable } from "@angular/core";
+      import { LoggingService } from "./logging.service";
+
+      @Injectable()
+      export class AccountsService {
+         accounts = [...]
+         constructor(private loggingService: LoggingService) {}
+
+         addAccount(name: string, status: string) {
+            this.accounts.push({name: name, status: status});
+            this.loggingService.logStatusChange(status);
+         }
+
+         updateStatus(id: number, status: string) {
+            this.accounts[id].status = status;
+            this.loggingService.logStatusChange(status);
+         }
+      }
+
+> To use the service in another service, we generally start in the same way as we would when injecting a service by using the constructor.
+> If we inject a service into something, this something needs to have some meta-data attached to it.
+> A Component has some meta-data because we have the @Component and a Directive has meta-data because it has a @Directive decorator. A Service does not have any meta-data.
+> This is how Angular works that we must attach some meta-data to work. There is a specific meta-data we should attach to a Service called the @Injectable. This needs to be imported from @agnular/core.
+> This now tells Angular that this Service is injectable or that something can be injected into it.
+> We use the @Injectable to the Service receiving the injected service. We only add it to the Service we expect to receive something injected into it.
+> With this in place, we now have an application working as it did but with everything centralised into our Service and we are also now injecting a Service into another Service.
