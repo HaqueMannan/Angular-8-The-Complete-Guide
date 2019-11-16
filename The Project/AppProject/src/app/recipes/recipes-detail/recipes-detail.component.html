@@ -20,7 +20,7 @@
       <div class="btn-group" role="group" appDropdown>
          <button id="btnGroupDrop1" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown">Manage Recipe</button>
          <ul class="dropdown-menu" aria-labelledby="btnGroupDrop1" appDropdown>
-            <li><a class="dropdown-item" href="#">Add to Shopping List</a></li>
+            <li><a class="dropdown-item" style="cursor: pointer;" (click)="onAddToShoppingList()">Add to Shopping List</a></li>
             <li><a class="dropdown-item" href="#">Edit Recipe</a></li>
             <li><a class="dropdown-item" href="#">Delete Recipe</a></li>
          </ul>
