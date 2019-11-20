@@ -1,0 +1,15 @@
+> Currently, we can only navigate via manually typing the URL in the browser address bar.
+> We can use the <a href=""> property to provide a URL path when we click on a link. This would allow us to change the links in the address bar when we click on a link on our page which will allow Angular to render the component for the current URL path.
+> However, the problem with this approach is that it is reloading/refreshing the application whenever we click on a link which is the natural behaviour of browser links.
+> This would mean it restarts the application on every navigation, which would mean our application state will be lost.
+> To implement navigation, there is a special directive Angular provides us called routerLink. We ca replace the href property for this directive.
+
+   app.component.html:
+      <li><a routerLink="/">Home</a></li>
+      <li><a [routerLink]="['/users']">Users</a></li>
+
+> The routerLink can parse a string. This will treat the link differently compared to the href behaviour.
+> We can also use property binding with the routerLink directive to bind to some non-string data. This can be a string using a single quotes ("'string'") or an array ("[]") which provides fine-grain control over the routerLink. In the array, we can define all the segments of the path as elements in the array.
+> The leading slash is required for the first array element to make it an absolute path and each other elements in the array would not need the forward slash.
+> With this in place, this now provides us with the components based on the URL without having to reload the page. 
+> The routerLink catches the click on the element, prevents the default (which would be to send a request) and instead analyses what we passed to the routerLink directive and then parses it and checks if it finds a fitting route in our application router configuration. This is how we can and should navigate around with the routerLink which ultimately provides a better user experience, prevents a refresh of the page and therefore keeps the app state and is much faster than reloading the page.
