@@ -1,0 +1,31 @@
+> In the Angular framework, we create a single page application. However, we can use routes to make it feel as though the application has multiple pages.
+> Angular on the background renders the components on the page by manipulating the DOM.
+> Routes are responsible for our whole application. Whatever we enter after the forward slash, we would want to load the component on the main page.
+> The app.module.ts is where we would register all our application routes.
+
+   app.module.ts:
+      ...
+      import { Routes, RouterModule } from '@angular/router';
+      const appRoutes: Routes = [ { path: '', component: HomeComponent, path: 'users', component: UsersComponent } ];
+
+      @NgModule({
+         ...
+         imports: [..., RouterModule]
+      })
+
+> We would need to import routes from @angular/router and we can create a new variable with the type of Routes. This will help provide structure to our routes.
+> The new variable with the type of Routes will hold an array of our routes.
+> Each route is a JavaScript object within the array.
+> the routes object follows a specific pattern. It always needs a path i.e. what gets entered in the URL after the domain name, for example in the above path this would translate to the URL localhost:4200/users. The second argument is typically a component which informs Angular that when the path is reached, a certain component should be loaded i.e. the page that should be loaded.
+> This alone will not do anything. Angular will ignore the appRoutes variable. To register this Routes variable, we need import the RouterModule from @angular/router and then add this to the @NgModule imports array.
+> We use the .forRoot() method which will allow us to register some routes i.e. our appRoutes variable for our main application.
+> We now have routing functionality in our application and Angular knows our routes and which components to serve up based on the routes.
+> The final piece of the puzzle is to render the route in the app.component.html file:
+
+   app.component.html:
+      <div>
+         <router-outlet></router-outlet>
+      </div>
+
+> The <router-outlet> looks like a component but it is a directive provided by Angular. This directive simply marks the place in our DOM where we want the Angular Router to load the component of the currently selected route.
+> we now have routes for our Angular Application allowing us to render component pages based on the URL route simulating a multi-page application.
