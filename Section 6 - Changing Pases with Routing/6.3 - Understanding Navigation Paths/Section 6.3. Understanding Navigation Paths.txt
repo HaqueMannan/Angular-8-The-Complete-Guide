@@ -1,0 +1,30 @@
+> On the routerLink if we omit the absolute path i.e. the string has no forward slash, this would work. However, we will run into problems when we have another routerLink in the component with the same as seen in the below example:
+
+   app.component.html:
+      <li><a routerLink="servers">Servers</a></li>
+
+   servers.component.html:
+      <li><a routerLink="servers">Reload Servers</a></li>
+
+> The <li> in the AppComponent will work as this will navigate to localhost:4200/servers, however, the link in the ServersComponent will fail because we would actually navigate to localhost:4200/servers/servers which no routes exists and causes a JavaScript error in the console.
+> However, if we were to change the path in the AppComponent to an absolute path, the application will work for both links as seen below:
+
+   app.component.html:
+      <li><a routerLink="/servers">Servers</a></li>
+
+   servers.component.html:
+      <li><a routerLink="servers">Reload Servers</a></li>
+
+> The relative path, it always appends the path that we specify in the routerLink to the end of the current path. The current path will depend on the component we are on.
+> The app.component.html is at the root of the application and therefore we can get away with using a relative path as the path would be appended to the root URL i.e localhost:4200
+> We can also use the './servers' relative path which would add to the currently loaded path which in the app.component.html would be the domain name i.e. localhost:4200 path.
+> We can navigate around like we are in a directory for example ../ to go up one level which is another way to get around the first error:
+   app.component.html:
+      <li><a routerLink="servers">Servers</a></li>
+
+   servers.component.html:
+      <li><a routerLink="../servers">Reload Servers</a></li>
+
+> This will go back one level which would be localhost:4200 and then append /servers to that url link which would match our router path to correctly render the component for the route.
+> It is important to note that the path will depend on the route we are on and therefore must take this into account when using the directory navigation path style syntax.
+> This is how we can navigate around. Absolute path with a forward slash at the beginning will always get appended to the root domain. Relative path whether using without a forward slash or './' or '../' would always navigate from the currently loaded on component.
