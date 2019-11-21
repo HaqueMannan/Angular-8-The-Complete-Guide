@@ -1,0 +1,100 @@
+Passing Parameters to Routes:
+> We can load a component dynamically using the route parameters. For example if we wanted to load a single user from the UserComponent dynamically.
+
+   app.module.ts:
+      const appRoutes: Routes = [
+         { path: 'users', component: UsersComponent },
+         { path: 'users/:id', component: UserComponent }
+      ]
+   
+   users.component.ts:
+      export class UsersComponent {
+         users = [
+            { id: 1, name: Alex }, { id: 2, name: Beth }
+         ]'
+      }
+
+> We can use the route parameter to pass in the id of the user from the UsersComponent we wish to load into the UserComponent.
+> Instead of setting up multiple routes for each user i.e. users/i, users/2, etc which is very inefficient and not dynamic/optimal.
+> To add parameters to our route path which will act as dynamic segments to our paths. We do this by adding a colon (:) followed by any name we would like. In the above we used :id as a fitting name. We can later be able to retrieve this parameter inside of the loaded component by this name we specified in our routes.
+> The colon tells angular that this is the dynamic part of the path. So users/ followed by anything else which will be interpreted as the :id, will load in this component.
+> With this in place if we were to now navigate to localhost:4200/users/something (replace something with anything we want), we should now see the UserComponent being loaded and we can now have a dynamic route loading in our components.
+
+
+Fetching Route Parameters:
+> In the component TypeScript file, we can get access to the route parameters.
+> We need to import from @angular/router and inject in the constructor the ActivatedRoute. This will provide us access to the currently loaded route.
+> This currently loaded route is a JavaScript objected with a lot of meta-data about the currently loaded route. This route will provide us access to the :id parameter passed into the URL for the currently selected user.
+> We can use the ngOnInit() to get the :id parameter for the user when the component gets initialised.
+
+   app.module.ts:
+      const appRoutes: Routes = [
+         { path: 'users/:id/:name', component: UserComponent }
+      ]
+
+   user.component.ts:
+      export class UserComponent implements OnInit {
+         user: {id: number, name: string};
+
+         constructor(private route: ActivatedRoute) { }
+
+         ngOnInit() {
+            this.user = {
+               id: this.route.snapshot.params['id'],
+               name: this.route.snapshot.params['name']
+            };
+         }
+      }
+
+   user.component.html:
+      <p>User with ID {{ user.id }} loaded.</p>
+      <p>User name is {{ user.name }}</p>
+
+> We can fetch the :id from the URL as set this as the id value of the user using the route.snapshot.params to get the id (without having to use the colon).
+> In the snapshot.params[] we only have access to the properties which we defined in the route parameters in the app.module.ts file.
+> If the name is also encoded in the route path, we can also obtain this and set this value similar to the id. In the above example we use :id/:name which allows us to access the id and name parameters from the route in our TypeScript code.
+> We can add as many parameters as we would like and they are all retrievable from the .snapshot.params object of the loaded route.
+> We can output this data using string interpolation.
+> There are use cases where the above will not work. For example, the below:
+
+   user.component.html:
+      <p>User with ID {{ user.id }} loaded.</p>
+      <p>User name is {{ user.name }}</p>
+      <a [routerLink]="['/users', 10, 'Anna']">Load Anna</a>
+
+> If we try to visit this link which is equivalent to navigating to localhost:4200/users/10/Anna we will notice that the text would not update.
+> This is not a bug, but a default behaviour. We load the data by using the snapshot.params[] object on the route. When angular loads the component, it gets the route, the component and when it initialises the component it gets the data from the snapshot. This only occurs if we have not been on this component before.
+If we click the link which is on the UserComponent, the URL will still change but we are already on the initialised component and Angular cleverly does not re-instantiate this component as this would cost us performance.
+> It is fine to use the snapshot for the first initialisation, but to be able to react to subsequent changes we need a different approach.
+> On the ngOnInit, we can use the params on the route itself.
+
+   user.component.ts:
+      import { ActivatedRoute, Params } from '@angular/router';
+      ...
+      export class UserComponent implements OnInit {
+         user: {id: number, name: string};
+
+         constructor(private route: ActivatedRoute) { }
+
+         ngOnInit() {
+            this.user = {
+               id: this.route.snapshot.params['id'],
+               name: this.route.snapshot.params['name']
+            };
+            this.route.params.subscribe(
+               (params: Params) => { this.user.id = params['id'] }
+            );
+         }
+      }
+
+> The difference between .snapshot.params and .params is that the latter is an observable. Observables are a feature added by another third party package (not by Angular, but heavily used by Angular) which allows us to work easily with asynchronous tasks.
+> The update of the user link is an asynchronous task because the parameters of our current loaded route might change at some point in the future if the user clicks this link but we do not know when, we do not know if and we do not know how long it would take. Therefore, we cannot block our code and wait for this to happen because it might never happen.
+> An observable is an easy way to subscribe to some event which might happen in the future, to then execute some code when it happens without having to wait for it now.
+> We call .subscribe() method on the params observable object. The .subscribe() can take in three arguments.
+> The first argument is the most important as it gets fired whenever new data is sent through an observable i.e. whenever there is  change. 
+> The argument is an asynchronous function and we can use an ES6 arrow function. 
+> This function receives the updated params as an argument which we can set as the Type of Params (which needs to be loaded from @angular/router, but it makes no difference if omitted).
+> In the function body we can update the user object with the updated params parameters.
+> This anonymous function will not be executed when ngOnInit runs through, only the this.route.params.subscribe will get executed to have the subscription setup. Only when the parameters change will the anonymous function get executed and the details updated on the component using the router parameters reactively.
+> This is the approach we should take to be safe against changes that are not being reflected in our template.
+> If we know that the component template will 100% of the time be recreated when it is reached because the are no other ways of reaching the route while being on that component, then the .snapshot.params should be efficient enough and we do not need to subscribe. In all other case we need to make sure to use the subscribe approach to get informed of any changes in our route parameter.
