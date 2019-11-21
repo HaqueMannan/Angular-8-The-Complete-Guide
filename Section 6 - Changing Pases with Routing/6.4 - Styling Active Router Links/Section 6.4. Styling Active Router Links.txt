@@ -1,0 +1,27 @@
+> Angular provides us a routerLinkActive directory which allows us to style the active link. This can be added to either the wrapping element or the link itself.
+
+   app.component.html:
+      <li routerLinkActive="active"><a routerLink="/">Home</a></li>
+      <li routerLinkActive="active"><a routerLink="/">Users</a></li>
+      <li routerLinkActive="active"><a routerLink="/">Servers</a></li>
+
+or
+
+   app.component.html:
+      <li><a routerLink="/" routerLinkActive="active">Home</a></li>
+      <li><a routerLink="/" routerLinkActive="active">Users</a></li>
+      <li><a routerLink="/" routerLinkActive="active">Servers</a></li>
+
+> This will attach the class we specify as the value, in the above this is "active".
+> We would add this to all the links on the page. This will allow the active class to be added to the element once they have been clicked and are active.
+> we will notice that the Home will always be styled active regardless when we click another link which will also have the active class style. This is because the routerLinkActive directive does one thing; it analyses the currently loaded path and then checks which links lead to a route that uses this path. By default it marks an element as active, if it contains the path. Therefore the "/" or empty part of the segment for the home route is always available on every route.
+> To fix the above issue, we can add a configuration to the routerLinkActive directive called routerLinkActiveOptions. This requires property binding because we pass in a JavaScript object. We set the option exact to true which will tell Angular to only add the class if the path is exactly the full URL path.
+
+   app.component.html:
+      <li>
+         <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Home</a>
+      </li>
+      <li><a routerLink="/" routerLinkActive="active">Users</a></li>
+      <li><a routerLink="/" routerLinkActive="active">Servers</a></li>
+
+> This will fix the behaviour so that the home page is not active unless the URL path matches exactly the path.
