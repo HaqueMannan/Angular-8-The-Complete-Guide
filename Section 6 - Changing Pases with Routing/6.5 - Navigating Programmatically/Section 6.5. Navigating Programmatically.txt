@@ -1,0 +1,45 @@
+> We know how to add routes and how to load them either by typing them manually into our browser address bar or by clicking some links (as well as how to style the links).
+> To load a link programmaticlly via a function, we need to get access to the router so that we can tell it to navigate somewhere else.
+
+   home.component.html:
+      <button (click)="onLoadServers()">Load Server</button>
+
+   home.component.ts:
+      import { Router } from '@angular/router';
+      export class HomeComponent implements OnInit {
+         constructor(private router: Router) { }
+         onLoadServers() {
+            // Complex computation.
+            this.router.navigate(['/servers']);
+         }
+      }
+
+> We can get inject the router into the router into our component by importing the Router from @angular/router and then adding a private variable of the type Router in the component constructor.
+> With the Router injected, we can use this router and use the .navigate() method to navigate to the route path.
+> The navigate method takes in an array and each string represents an element of the new path as we seen before.
+> We can use an absolute or relative path in the array. However, if we use a relative path we would need to control to what it should be relative to.
+> We now have a click button which can run a function and then navigate to a different route programmaticlly without having to reload our page.
+
+> Below is an example of using a relative path:
+
+   servers.component.html:
+      <button class="btn btn-primary" (click)="onReload()">Reload Page</button>
+
+   servers.component.ts:
+      import { Router } from '@angular/router';
+      export class HomeComponent implements OnInit {
+         constructor(private router: Router) { }
+         onReload() {
+            this.router.navigate(['servers'], { relativeTo: this.route });
+         }
+      }
+
+> If we use a relative path in the above example, we will notice that we would not get an error, even though we are on the same path (compared to the routerLink).
+> Unlike the routerLink, the navigate does not know which route we are currently on. The routerLink always know which component template it sits and therefore it knows what the currently loaded route is. However, navigate does not work in the same way.
+> To tell navigate what is the current route path, we need to pass in a second argument to the navigate method which is a JavaScript object that allows us to configure the navigation action.
+> The relativeTo property allows us to define relative to which path this link should be loaded. By default this is always the default root domain which is why the above does not cause an error for the relative servers path.
+> We do not pass in a string for the relativeTo, instead we can also inject the currently active route which has the type of ActivatedRoute. We need to import ActivatedRoute from @angular/router.
+> The ActivatedRoute injects the currently activated route i.e. the route which loaded this component.
+> The route is a complex JavaScript object which keeps a lot of meta-information about the currently active route.
+> We can use this.route for the relativeTo property value.
+> With this extra piece of information, Angular knows what our currently active route is. The navigate will now work the same as routerLink and the above relative path will break when we click the button because it will try to find a route of localhost:4200/servers/servers which does not exist. We therefore would need to use an absolute ('/servers') path to have it working again.
