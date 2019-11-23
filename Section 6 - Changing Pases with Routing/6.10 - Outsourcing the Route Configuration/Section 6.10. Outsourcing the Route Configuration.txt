@@ -1,0 +1,36 @@
+> When the routes array is growing larger than 3 routes, we may want to decide to split our route arrays into their own separate file typically named app-routing.module.ts and this will now become our Angular Module for routes.
+> We can create our own Angular Module, and this is a super easy use case for creating an Angular Module.
+
+   app-routing.module.ts:
+      import { NgModule } from "@angular/core";
+      import { Routes } from "@angular/router";
+      import ...
+
+      const appRoutes: Routes = [
+         { ... }, { ... } ...
+      ];
+
+      @NgModule({
+         imports: [ RouterModule.forRoot(appRoutes)],
+         exports: [ RouterModule ]
+      })
+      export class AppRoutingModule {
+
+      }
+
+   app.module.ts:
+      import { AppRoutingModule } from './app-routing.module';
+      ...
+      imports: [
+         ...
+         AppRoutingModule
+      ]
+
+> We use the @NgModule decorator to indicate the class is a Angular Module and this takes in a JavaScript object to configure it.
+> We need to import all route paths and modules.
+> In the @NgModule we do not need to have any declarations because this is already added to the app.module.ts file i.e. we are going to add the app-routing module to the app module. If we tried to redeclare, this will give us an error.
+> We can remove RouterModule from the app.module.ts file because this will be added to the app-routing.module.ts file instead.
+> We now need an exports array which simply tells Angular, from this module, if we were to add this module to the imports of another module, what should be accessible to the module which imports it.
+> We would want to make our RouterModule accessible to other modules which imports our app-routing module.
+> In the app.module.ts file we can simply add the AppRoutingModule as an import ensuring we also add the import file path.
+> This is the same setup as before with the same behaviour, however, we now have a much more leaner app.module.ts file and a much organised, maintainable and readable code/files structure within our app.
