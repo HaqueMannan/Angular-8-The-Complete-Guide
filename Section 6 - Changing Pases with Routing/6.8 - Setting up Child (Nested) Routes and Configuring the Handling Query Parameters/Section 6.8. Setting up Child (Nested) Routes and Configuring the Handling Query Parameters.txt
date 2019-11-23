@@ -1,0 +1,47 @@
+> If we want our components to load on the same page as the parent component, we need to create nested child routes.
+> We can also see in the app.module.ts file, we slightly have a duplication in our application routes for example servers, servers/:id and servers/:id/edit all start with servers. It would be nice to be able to nest them and have child routes that all start with servers as an example.
+> To create a child route, on the parent route we add another parameter of children which takes an array containing all the child routes.
+
+   app.module.ts:
+      const appRoutes: Routes = [
+         { path: 'servers', component: ServersComponent, children: [
+            { path: ':id', component: ServerComponent },
+            { path: ':id/edit', component: EditServerComponent }
+         ]}
+      ];
+
+> This provides us with a visual grouping. However, we will notice that we have the ServersComponent as the component that we would continue to load but the question now - where will ServerComponent (child route of ServersComponent) be loaded?
+> This will be an issue because our application will now error when we click the child component because it cannot find an outlet to load our child ServerComponent in which is true.
+> The only hook in our application where it should load in the components is in our app.component.html which has the <router-outlet>. This is reserved for all of our routes on the top level i.e. /servers.
+> The child routes of /server need a separate outlet because they cannot override the ServersComponent. Instead they should be loaded nested into the ServersComponent.
+> We can achieve this by going into the ServersComponent html template and add a <router-outlet> where we would want to load in the child components.
+
+   servers.component.html:
+      <div>
+         <router-outlet></router-outlet>
+      </div>
+
+> This will add a new hook which will be applied to all child routes of the route being loaded on the ServerComponent which is our /servers route.
+> If we now click on the child link, the component will now be loaded next to the ServersComponent rather than on a new page.
+
+
+Preserving Routes:
+> In the .navigate() method, in the options object we can add an option of queryParamsHandling property which takes in a string value.
+> We can choose to 'merge' which will take the previous query parameter with any new parameters we may add to it, or 
+> We can choose to 'preserve which will override the default behaviour of dropping the old routes but to make sure the old routes are kept.
+
+   server.component.ts:
+      onEdit() {
+         this.router.navigate(['edit'], { relativeTo: this.route, queryParamsHandling: 'preserve'});
+      }
+
+> In the above example, when we click on the edit button which will trigger the onEdit function, this will navigate to the relative 'edit' route path but the queryParamsHandling value of 'preserve' will now keep the previous routes query parameters. We will now see in the browser's address bar:
+   Navigating from URL:
+      http://localhost:4200/servers/1?allowEdit=0#loading
+   
+   After Clicking the Edit Button, navigate to URL:
+      http://localhost:4200/servers/1/edit?allowEdit=0
+   
+> Without this option the route would have lost the query parameters, navigating to: 
+http://localhost:4200/servers/1/edit)
+> Therefore, if we had some logic based on the query parameters, we can preserve these without them being dropped when navigating to a different component.
