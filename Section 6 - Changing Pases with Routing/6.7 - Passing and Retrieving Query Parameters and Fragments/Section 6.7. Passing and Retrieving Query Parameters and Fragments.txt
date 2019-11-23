@@ -1,0 +1,92 @@
+> Query parameters are parameters separated by a question mark in the URL. 
+> We can have multiple query parameters using the & sing.
+> We can also have a hash # fragment to jump to a specific place in our application.
+> Below is an example URL demonstrating the above:
+   localhost:4200/users/Anna?mode=editing&authorised=true#loading
+
+> We can use the routerLink to pass in query parameters and fragments as seen in the below example (ensure to have the route setup in the app.module.ts file):
+
+   app.module.ts:
+      const appRoutes: Routes = [
+         { path: 'servers/:id/edit', component: EditServerComponent }
+      ]
+
+   servers.component.html:
+      <a href="#" [routerLink]="['/servers', 5, 'edit']" queryParams="{allowEdit: '1'}">
+         {{ server.name }}
+      </a>
+
+> We use the queryParams property directive. This is not a new directive but it is another bindable property of the routerLink directive.
+> We pass in a JavaScript object where we can define key:value pairs of the query parameters we want to add.
+> If we now click on the link we will see the the URL of:
+   localhost:4200/servers/5/edit?allowEdit=1
+
+> We can add more key:value paris in the queryParams and this will automatically add the & to separate each query parameters in the URL.
+> To add a fragment we can use the fragment parameter like so:
+   servers.component.html:
+      <a href="#" [routerLink]="['/servers', 5, 'edit']" queryParams="{allowEdit: '1'}" [fragment]="'loading'">
+         {{ server.name }}
+      </a>
+
+   or
+
+      <a href="#" [routerLink]="['/servers', 5, 'edit']" queryParams="{allowEdit: '1'}" fragment="loading">
+         {{ server.name }}
+      </a>
+
+> Either syntax would work, but we will now notice when we click the link the URL will display the fragment at the end:
+   localhost:4200/servers/5/edit?allowEdit=1#loading
+
+> To achieve this programmatically we can analyse the below example:
+
+   home.component.html:
+      <button class="btn btn-primary" (click)="onLoadServer(1)">Load Server 1</button>
+
+   home.component.ts:
+      export class HomeComponent implements OnInit {
+         ...
+         onLoadServer(id: number) {
+            // complex calculations
+            this.router.navigate(['/servers', id, 'edit'], {queryParams: {allowEdit: '1'}, fragment: 'loading'});
+         }
+      }
+
+> On the .navigate() as the second argument, we can use the options object that we would use for referredTo, but we can also set the queryParams and fragment options.
+> The queryParams takes in a JavaScript object of the key:value pairs for the query selector.
+> With this in place we have a dynamic link for the id number, however we can also pass in the query selector and fragments for the route.
+> This is how we can pass the query parameter and fragment on both the programmatical routing approach or on the routerLink.
+
+> To retrieve query parameters and fragments from the URL, we require the ActivatedRoute imported from @angular/router and injected into our component.
+
+   edit-server.component.ts:
+      import { ActivatedRoute } from '@angular/router';
+      constructor(private route: ActivatedRoute) { }
+      ngOnInit() {
+         console.log(this.route.snapshot.queryParams);
+         console.log(this.route.snapshot.fragment);
+         this.route.queryParams.subscribe();
+         this.route.fragment.subscribe();
+      }
+
+> There are two ways to retrieve the queryParams and fragment as seen in the above ngOnInit:
+   1) We can access the queryParams or fragment through the .snapshot
+   2) We can create queryParams or fragment as an observable which we can subscribe to
+
+> The first method will have the same issue as we have seen previously for the params i.e. they will only be updated when the component is first created. If there is a chance of changing our query parameters from the page we are currently on, we might not want to use this approach because it will not be reactive to changes on the component after it has been loaded.
+
+> To conclude, just like with params, we have the same tools available for queryParams and fragment we can use in the exact same way when querying and retrieving our URL routes in our applications.
+
+> We do not need to unsubscribe to our subscription because Angular will handle this for us in the background. Angular will clean up the subscription whenever the component is destroyed.
+> If we did not destroy a subscription, when we move away from the component and later come back the subscription would always live in memory and is not closely tied to the component. Therefore, if the component is destroyed the subscription will not. Therefore, theoretically we can manually implement the OnDestroy lifecycle method which we can import from @angular/core. Below is an example of performing this manually:
+
+   user.component.ts:
+      import { Component, OnInit, OnDestroy } from '@angular/core';
+      import { Subscription } from 'rxjs/Subscription';
+
+      export class UserComponent implements OnInit, OnDestroy {
+         paramsSubscription: Subscription;
+         ngOnInit() { this.paramsSubscription = this.route.params.subscribe(...) }
+         ngOnDestroy() { this.paramsSubscription.unsubscribe() }
+      }
+
+> We do not need to do the above as Angular does this for us in the background and uses the rxjs package; however, it is good knowledge to understand how to unsubscribe on our own when we implement our own observables using the rxjs package.
