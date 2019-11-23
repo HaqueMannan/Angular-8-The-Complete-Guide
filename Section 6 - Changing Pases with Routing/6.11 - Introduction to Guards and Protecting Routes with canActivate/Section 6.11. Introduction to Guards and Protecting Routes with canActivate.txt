@@ -1,0 +1,83 @@
+> Route Guards are functionality/logic/code which is executed before a route is loaded or once we want to leave a route. 
+> For example, we only want to give our ServerComponent or the EditServerComponent to a user who is logged in. We would want to check this before any of our sub-routes are accessed.
+> Manually checking this on the onInit() lifecycle method will be very cumbersome because we would have to add this for every child components. If we add more child components belonging to the parent, we would have to add this over and over again. 
+> We can therefore use a feature built into the Angular Router to run some code before the component is loaded. This is known as the canActivate Guard.
+
+> We can create a new file called auth-guard.service.ts - this is a service which we will use as an AuthGuard to our navigation routes.
+
+   auth-guard.service.ts:
+      import { Injectable } from "@angular/core";
+      import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot, Router } from "@angular/router";
+      import { Observable } from "rxjs";
+
+      import { AuthService } from "./auth.service";
+
+      @Injectable()
+      export class AuthGuard implements CanActivate {
+         constructor(private authService: AuthService, private router: Router) {}
+
+         canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> | Promise<boolean> | boolean {
+            return this.authService.isAuthenticated()
+               .then((authenticated: boolean) => {
+                  if (authenticated) {
+                     return true;
+                  } else {
+                     this.router.navigate(['/']);
+                  }
+               });
+         }
+      }
+
+   auth.service.ts:
+      export class AuthService {
+         loggedIn = false;
+
+         isAuthenticated() {
+            const promise = new Promise(
+               (resolve, reject) => { setTimeout(() => { resolve(this.loggedIn) }, 800); }
+            ); return promise;
+         }
+         login() {
+            this.loggedIn = true;
+         }
+         logout() {
+            this.loggedIn = false;
+         }
+      }
+
+> This implements the CanActivate interface which is provided by the Angular package and therefore we must import it from @angular/router.
+> This forces us to have an canActivate method in this class.
+> This method receives two arguments of the ActivatedRouteSnapshot and the RouterState which we also need to import from @angular/router and add them add the type for our argument variables.
+> We will define that Angular should execute this code before a route is loaded and therefore Angular will provide us this data for these arguments. We simply need to be able to handle the data.
+> The canActivate returns an Observable which we need to import from rxjs/Observable - this observable will wrap a boolean i.e. it will in the end resolve to a true or false value.
+> Alternatively, the canActivate returns a Promise of the value type boolean or just a boolean.
+> Therefore, the canActivate can run asynchronously returning either a Observable or a Promise or synchronously returning a boolean.
+> Some guards may run purely on the client and therefore synchronously while other guards may need to wait for some code to finish before it can be run and so run asynchronously.
+> we can have another service to fake the behaviour of login and logout as seen above in the auth.service.ts example. We can use this in the AuthGuard in the @Injectable in order to reach out to this service and injected it in the constructor.
+> In the canActivate guard we want to simply check if the user is logged in or not.
+> If the user is not authenticated we can force the user to navigate elsewhere.
+> Now that we have the logic setup for the AuthGuard, we need to be able to use it on our routes. To use the AuthGuard, we simply go into the app-routing module and define which route should be protected by this guard.
+
+   app-routing.module.ts:
+      import { AuthGuard } from "./auth-guard.service";
+      const appRoutes: Routes = [
+         { path: 'servers', canActivate: [AuthGuard], component: ServersComponent, children: [
+            { path: ':id', component: ServerComponent },
+            { path: ':id/edit', component: EditServerComponent }
+         ]}
+      ];
+
+> We simply use the canActivate property on our route and select all the guards we want to apply to the route. This will automatically get applied to all the child routes.
+> We need to ensure we also import the AuthGuard service file.
+> In the above example, the servers and all its child routes is only accessible if the user is authenticated with our fake login service.
+> The canActivate method will only return true in the end if the auth.service loggedIn property is set to true.
+> We need to make sure in the app.module.ts file we add the two new services of AuthGuard and AuthService to the providers array.
+
+   app.module.ts:
+      import { AuthGuard } from './auth-guard.service';
+      import { AuthService } from './auth.service';
+      
+      @NgModule({
+         ...
+         providers: [ServersService, AuthGuard, AuthService],
+      })
