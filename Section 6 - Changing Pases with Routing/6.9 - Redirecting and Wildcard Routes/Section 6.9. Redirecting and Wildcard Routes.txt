@@ -1,0 +1,41 @@
+> We can create a 404 Error handling whereby we can redirect users to a 404 page for routes that have not been configured in our app.module.ts routes array.
+> To redirect a route to another component, when setting up a route in the app.module.ts file we do not need to specify a component property, instead we can use the redirectTo property (which is an alternative to the component property) and specify a path to redirect to.
+
+   app.module.ts:
+      const appRoutes: Routes = [
+         ...
+         { path: 'not-found', component: PageNotFoundComponent },
+         { path: 'something', redirectTo: '/not-found' }
+      ];
+
+> If we now navigate to the localhost:4200/something this will automatically redirect to localhost:4200/not-found instead.
+> This is how we can use redirection. However, it is not possible to define all possible wrong URL the user can enter in the browser address bar.
+
+> In order to create this all encompassing route to redirect to the page not found route, is to use the double asterisk which acts as a wildcard.
+> The wildcard route will catch all paths we do not know.
+
+   app.module.ts:
+      const appRoutes: Routes = [
+         ...
+         { path: 'not-found', component: PageNotFoundComponent },
+         { path: '**', redirectTo: '/not-found' }
+      ];
+
+> The order of this wildcard route is very important and this must be the very last route in the array of routes. This is because our routes gets parsed from top to bottom. If this was at the beginning, all routes will get redirected to the page not found which is not the behaviour we would want.
+> We now have a 404 Error Handling setup for our application.
+
+
+Important Redirection Path Matching:
+> In our example, we didn't encounter any issues when we tried to redirect the user. But that's not always the case when adding redirections.
+> By default, Angular matches paths by prefix. That means, that the following route will match both 
+/recipes and just / 
+
+   { path: '', redirectTo: '/somewhere-else' } 
+
+> Actually, Angular will give you an error here, because that is a common gotcha: This route will now ALWAYS redirect you! Why?
+> Since the default matching strategy is "prefix" , Angular checks if the path you entered in the URL does start with the path specified in the route. Of course every path starts with '' (Important: that is not a whitespace, it is simply "nothing").
+> To fix this behaviour, we need to change the matching strategy to "full"
+
+   { path: '', redirectTo: '/somewhere-else', pathMatch: 'full' } 
+
+> Now, we would only get redirected if the full path is '' (therefore, only if we have NO other content in our path for this example).
