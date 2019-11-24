@@ -1,0 +1,22 @@
+> It is important to note that our routes works fine on our local setup but it is not something we should take for granted.
+> If we are hosting the app on a real server somewhere in the web, the routes may not work out of the box. This is because the routes (URL) always parsed/handled by the server first i.e. the server which hosts our application.
+> On the local dev environment we are also using a development server but this server has one special configuration whereas the deployed live server would also needs to have.
+> The server hosting our single page application has to be configured so that in a case of a 404 Error, it returns the index html file i.e. the file starting and containing our Angular app. Why? All of the URLs are parsed by the server first and not by Angular.
+> So if we have /servers, it will look for a /servers route on our server which chances are we do not have a /servers route because we only have one file i.e. index.html containing our Angular app. We want Angular to take over and parse this route but it will never get a chance if our server hosting the app decides it does not know the route and displays a 404 page. Therefore in such a case we need to ensure our web server returns the index.html file.
+
+> If for some reason we cannot get this to work or we need to support very old browsers which are not able to parse paths like this in the client, we have an alternative approach to using these URLs.
+> We can fall back to a older technique which was used a couple of years ago of using a hash sign in our routes.
+> To enable this, we would need to apply the following in our app-routing.module.ts file:
+
+   app-routing.module.ts:
+      ...
+      @NgModule({
+         imports: [ RouterModule.forRoot(appRoutes, { useHash: true })],
+      })
+
+> We add this to the .forRoot() method as a second argument. This is a JavaScript object to configure the setup of our routes.
+> We can use the useHash configuration and set this to true (the default is false).
+> Now we would see all our routes have the # in the url. For example in the root URL we would now see localhost:4200/#/ and all other routes would look like for example http://localhost:4200/#/servers etc.
+> This hash informs our web server to only care about the part in the URL before this hash tag. Therefore, all the part thereafter will be ignored by our web server. Therefore, this will also run on server which also don't return the index.html file in case of 404 errors as they only care for the part before the hash tag in the URL.
+> the parts after the hash tag can now be parsed by our client/Angular.
+> This is the solution if we cannot get the other approach to work on our deployed server hosting our Angular application.
