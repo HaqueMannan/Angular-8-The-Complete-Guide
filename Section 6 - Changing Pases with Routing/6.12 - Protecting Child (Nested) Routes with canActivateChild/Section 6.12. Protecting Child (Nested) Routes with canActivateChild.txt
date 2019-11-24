@@ -1,0 +1,36 @@
+> The CanActivateChild Interface needs to be imported from @angular/router and this interface requires a canActivateChild method in this class.
+> This takes the same form as the canActivate method.
+> This method can return a Observable, Promise or Boolean value. Since this runs the same logic, we can simply return the canActivate method.
+
+   auth-guard.services.ts:
+      import { Injectable } from "@angular/core";
+      import { CanActivate, CanActivateChild, ActivatedRouteSnapshot, RouterStateSnapshot, Router } from "@angular/router";
+
+      @Injectable()
+      export class AuthGuard implements CanActivate, CanActivateChild {
+         constructor(private authService: AuthService, private router: Router) {}
+
+         canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> | Promise<boolean> | boolean { ... }
+
+         canActivateChild(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> | Promise<boolean> | boolean {
+            return this.canActivate(route, state);
+         }
+      }
+
+> The benefit of adding this? Since we added the CanActivateChild interface, we can now access a different hook/guard in our routes.
+> In the below, we can use the canActivateChild which also takes in an array of services which acts as guards. We do not need to use canActivate.
+> The canActivateChild can continue to use the AuthGuard because the AuthGuard is able to do both i.e. protect a single route (since we have canActivate implemented) or all child routes since we have canActivateChild implemented.
+
+   app-routing.module.ts:
+      ...
+      const appRoutes: Routes = [
+         { path: 'servers', canActivateChild: [AuthGuard], component: ServersComponent, children: [
+            { path: ':id', component: ServerComponent },
+            { path: ':id/edit', component: EditServerComponent }
+         ]},
+         { path: 'not-found', component: PageNotFoundComponent },
+         { path: '**', redirectTo: '/not-found' }
+      ];
+
+> This now allows us to navigate to the localhost:4200/servers route; however, when we try to click on the individual routes, we are redirected back to the home page as we do not have access if loggedIn is false which will set the AuthGuard to false and protect/guard this route.
+> Only the child routes are protected and this provides us with the fine grain control that we can implement to protect a whole route and its child routes or just the child routes (without having to implement the routes to each and every child routes).
