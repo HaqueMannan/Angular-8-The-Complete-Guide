@@ -1,0 +1,81 @@
+> If we have some dynamic data we need to fetch before a route can be displayed/rendered, for example if we click on a server and we need to load an individual server from some backend and this takes a couple of seconds.
+> In such a use case we need a resolver. This is a service which will allow us to run some code before a route is rendered.
+> The difference between canActivate, the resolver will not decide whether this route should be loaded/rendered or not. The resolver will always render the component in the end, but it would do some pre-loading ie. it will fetch some data that the component will need later on.
+> The alternative is to render the component or target page instantly and in the ngOnInit lifecycle method of the page we could fetch the data and display some spinner whilst we are doing so.
+> If we want to load the data before dispaying the route we would use the resolver guard.
+
+   server-resolver.service.ts:
+      import { Resolve } from "@angular/router";
+      export class ServerResolver implements Resolve<{ id: number, name: string, status: string}> {
+         resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<{ id: number, name: string, status: string}> | Promise<{ id: number, name: string, status: string}> { ... }
+      }
+
+> This class will import the Resolve interface from @angular/router.
+> Resolve is a generic type and should wrap around whatever item or data field we will fetch in the end.
+> We should define the type which we could outsource this into an interface or a model in general. This is simply a type definition of the thing the resolver will give us in the end i.e. what it will resolve to.
+> The resolve service requires us to implement the resolve method.
+> The resolve method takes in two arguments of the route of the type ActivatedRouteSnapshot and the state of the type RouterStateSnapshot. These are the two information provided by the Angular Router.
+> In the end the resolve method has to return either an Observable which we need to import from rxjs/Observable, Promise or a Server. The types being the definition of the resolver (the interface or model).
+> Note it is always better to outsource the interface but we can also create it within the service for demonstration.
+
+   server-resolver.service.ts:
+      import { Injectable } from "@angular/core";
+      import { Resolve } from "@angular/router";
+      import { Observable } from "rxjs/Observable";
+
+      import { ServersService } from "../servers.service";
+      
+      interface Server {
+         id: number;
+         name: string;
+         status: string
+      }
+
+      @Injectable()
+      export class ServerResolver implements Resolve<{ id: number, name: string, status: string}> {
+         resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<Server> | Promise<Server> | Server {
+            return this.serversService.getServer(+route.params['id']);
+         }
+      }
+
+> In the resolve method body we need to define the logic to get the data back.
+> In the above example where we have a synchronous code whereby the data is returned instantaneously we can inject another service using @Injectable and call on that service method to get the snapshot parameter for he id. We need to add the + to the route to make sure this is a number and not a string for the id to prevent any errors.
+> This is the simplest way to use the resolver. This resolver can also work with asynchronous code such as a HTTP request.
+
+> We need to add the resolver to the app.module.ts file in order to use it and then add it to the app-routing module to the routes which require the resolver.
+
+   app.module.ts:
+      import { ServerResolver } from './servers/server/server-resolver.service';
+      @NgModule({
+         ...
+         providers: [ServersService, AuthGuard, AuthService, CanDeactivateGuard, ServerResolver],
+      })
+   
+   app-routing.module.ts:
+      import { ServerResolver } from "./servers/server/server-resolver.service";
+      const appRoutes: Routes = [
+         { path: ':id', component: ServerComponent, resolve: { server: ServerResolver } },
+         ...
+      ]
+
+> The resolve property takes in a JavaScript object where we map all of the resolvers.
+> This is different to the other route guards we have previously seen.
+> This uses key:value pairs whereby the key can be named to whatever we would like and the value is the service guard to pair.
+> This will now map the data that this resolver returns back to our server (key) object which we will have available in this to be loaded component.
+> In our to be loaded component we can use the resolver.
+
+   server.component.ts:
+      import { ActivatedRoute, Params, Router, Data } from '@angular/router';
+      export class ServerComponent implements OnInit {
+         server: {id: number, name: string, status: string};
+         @ngOnInit() {
+            this.route.data.subscribe(
+               (data: Data) => { this.server = data['server']; }
+            );
+         }
+      }
+
+> We can bind the data Observable just like we did with the static data.
+> We can simply assign our server property in this component by binding to the data[server] property we retrieve from the resolver.
+> The name in the data array must match the name we used in our key:value pair in the app-routing module for resolve.
+> With this in place, this works as before but it now not using the params in the server component but instead using a resolver before the component loads. This is especially important for when using asynchronous data.
