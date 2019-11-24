@@ -1,0 +1,40 @@
+> How can we get a static data once the route has loaded?
+> For example we want a generic error-pages component which will display any errors other than just the 404 page not found.
+> The issue we have is that we are trying to output some message which we do not have.
+> Below is an example of adding a generic static data in our route which the page can have access to when the route is loaded:
+
+   app-routing.module.ts:
+      import { ErrorPageComponent } from "./error-page/error-page.component";
+      const appRoutes: Routes = [
+         { path: 'not-found', component: ErrorPageComponent, data: {message: 'Page not found!'} },
+      ]
+
+   error-page.component.html:
+      <h4>{{ errorMessage }}</h4>
+   
+   error-page.component.ts:
+      import { Component, OnInit } from '@angular/core';
+      import { ActivatedRoute } from '@angular/router';
+
+      @Component({
+         selector: 'app-error-page',
+         templateUrl: './error-page.component.html',
+         styleUrls: ['./error-page.component.css']
+      })
+      export class ErrorPageComponent implements OnInit {
+         errorMessage: string;
+
+         constructor(private route: ActivatedRoute) { }
+
+         ngOnInit() {
+            // this.errorMessage = this.route.snapshot.data['message'];
+            this.route.data.subscribe((data: Data) => { this.errorMessage = data['message']; }
+            );
+         }
+      }
+
+> We can use the route.snapshot to get access to the data property from our route and we must make sure the property we have access to exists within the route i.e. we know the message property exists within our route.
+> If this data message could possibly change while we are on this page we could use the subscribe to the data Observable.
+> This will provide us with a new data object of type Data (some dummy data type which we can import from @angular/router) which will give access to our data i.e. properties we defined in there.
+> Both methods would work whether the data may change or not.
+> We are now able to see the static error message we passed with the data property in our route. This is a typical use case whenever we have a static data we want to pass to a route.
