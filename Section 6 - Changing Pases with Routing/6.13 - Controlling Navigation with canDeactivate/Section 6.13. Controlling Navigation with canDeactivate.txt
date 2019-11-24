@@ -1,0 +1,75 @@
+> We can control whether a user is able to leave a route or not. This will provide a convenience for the user from accidentally navigating away from a route by asking the user to confirm the action.
+> A guard always needs to be a service. 
+> We can use the canDeactivate guard service to achieve this as seen in the below example:
+
+   can-deactivate-guard.service.ts:
+      import { CanDeactivate, ActivatedRouteSnapshot, RouterStateSnapshot } from "@angular/router";
+      import { Observable } from "rxjs/Observable";
+
+      export interface CanComponentDeactivate {
+         canDeactivate: () => Observable<boolean> | Promise<boolean> | boolean;
+      }
+
+      export class CanDeactivateGuard implements CanDeactivate<CanComponentDeactivate> {
+         canDeactivate(component: CanComponentDeactivate, currentRoute: ActivatedRouteSnapshot, currentState: RouterStateSnapshot, nextState?: RouterStateSnapshot): Observable<boolean> | Promise<boolean> | boolean {
+            return component.canDeactivate();
+         }
+      }
+
+> An interface is simply a contract which can be imported by some other class which forces this class to provide some logic.
+> This interface requires one thing from the component which implements it. It requires a CanDeactivate method.
+> We define the method requires no arguments and will return an Observable (we need to remember to import this from rxjs/Observable) which will resolve to a boolean or a promise which will resolve to a boolean or just a boolean. This will cover both synchronous and asynchronous scenarios following the same pattern as all of our other guards.
+> The export is the most important aspect of this service. The class implements the CanDeactivate which is provided by the Angular Router and so we need to import it from @angular/router.
+> The CanDeactivate is a generic type and it will wrap our own  interface.
+> This will allow our component to connect to our CanDeactivateGuard service.
+> The guard itself will also need to have a canDeactivate method. This method will be called by angular router once we try to leave a route. 
+> This will have the current component we are on as an argument and this needs to be of type CanComponentDeactivate which means it needs to be a component which has the CanComponentDeactivate interface implemented and therefore a component which has the canDeactivate method.
+> This will also have a second argument of the current router which is the type of ActivatedRouteSnapshot.
+> This will also have the current state which is the type of RouterStateSnapshot. 
+> As the final argument this will have the nextState i.e. where do we want to go as this would be called at the end when we want to leave a route. This is an optional argument and the type of RouterStateSnapshot.
+> This will also return an Observable, Promise or a Boolean.
+> We want to return and call canDeactivate on the component we are currently on. This is why we created the interface to implement.
+> This now allows the Angular router to execute canDeactivate in our service and also rely on the fact that the component we currently on has the canDeactivate method as well. This is where we would actually implement the logic checking of whether we are allowed to leave or not on a route. We need this connection between the guard and component.
+> We can now go back to our app-routing module and now add this canDeactivate guard as a property to a route.
+
+   app-routing.module.ts:
+      import { CanDeactivateGuard } from "./servers/edit-server/can-deactivate-guard.service";
+
+      const appRoutes: Routes = [
+         ...
+         { path: ':id/edit', component: EditServerComponent, canDeactivate: [CanDeactivateGuard] }
+      ]
+
+   app.module.ts:
+      import { CanDeactivateGuard } from './servers/edit-server/can-deactivate-guard.service';
+      @NgModule ({
+         ...
+         providers: [ServersService, AuthGuard, AuthService, CanDeactivateGuard],
+      })
+
+> The canDeactivate takes in an array of which we can pass in our CanDeactivateGuard which we also need to import the file.
+> For this to work we also need to add this guard service in the providers array in our app.module.ts file.
+> Angular will now run this guard whenever we try to leave the edit path.
+> The final step is to implement the CanComponentDeactivate interface on the component which has the guard. In the above example this will be our edit-server component:
+
+   edit-server.component.ts:
+      import { Observable } from 'rxjs/Observable';
+      import { CanComponentDeactivate } from './can-deactivate-guard.service';
+      ...
+      export class EditServerComponent implements OnInit, CanComponentDeactivate {
+         ...
+         canDeactivate(): Observable<boolean> | Promise<boolean> | boolean {
+            if (!this.allowEdit) {
+               return true;
+            }
+
+            if ((this.serverName !== this.server.name || this.serverStatus !== this.server.status) && !this.changesSaved) {
+               return confirm('Do you want to discard the changes made?');
+            } else {
+               return true;
+            }
+         }
+      }
+
+> This interface forces us to implement the canDeactivate method in our component which is important because we try to call this method on our service.
+> In our component we can now provide the actual logic deciding on whether or not we are allowed to leave the route. This logic will be run whenever the CanDeactivateGuard is checked by the angular router.
