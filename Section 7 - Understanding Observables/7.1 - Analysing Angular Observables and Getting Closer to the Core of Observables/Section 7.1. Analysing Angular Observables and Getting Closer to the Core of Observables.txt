@@ -1,0 +1,66 @@
+> What is an Observable? An observable is an object we can import from a third party package called rxjs.
+> The observable is implemented in a way that it follows the observable pattern.
+> We have an observable and a observer. Inbetween these two we have a stream (timeline) and on this stream we can have multiple events emitted by the observable (or data packages emitted by the observable depending on the data source of the observable).
+> The observable could emit data because we triggered it to do so (programmatically i.e. a button click) or as Angular does it, it could be connected to a http request i.e. when the response is returned, the response is emitted as a data package. There are dozen of data sources.
+> The observer is our code executed on the .subscribe function.
+> We have three ways of handling data packages:
+   1) handle the normal data
+   2) handle errors
+   3) handle the completion of the observable
+> In these three types of data handling hooks, this is where our code gets executed. Therefore, we can determine what should happen when we recieve a new data package, an error or when observable eventually completes.
+> An important note, an observable does not need to complete for example an observable connected to a button. How would we know when to complete because a user can click the button how often they would want.
+> Other observables such as the http will have a clear end and will complete eventually because once the response is there there is nothing else required and it is done.
+> We use observables to handle asynchronous tasks because all data sources (user inputs) Events, http requests, triggered in code are asynchronous tasks because we do not know when they would happen and how long it will take to complete.
+> When we execute our normal application code, we do not want to wait for the completion of these events because this would block our application code. Therefore, we need methods handling such asynchronous tasks.
+> Historically, we may have used callbacks or promises which we could continue to use. Observables are a different approach of handling asynchronous code and Angular embraces observables.
+> Observables have one main advantage of their operators.
+
+> Observables are not a feature baked into JavaScript or TypeScript, instead it is added by a package called rxjs.
+> In TypeScript we do not need to define an observable because it understand what is an observable and therefore we can just simply subscribe to it without explicitly informing about the type.
+> To build our own observables we can go into our component and import from rxjs. There are different ways to implement an observable and the easiest way is to import the interval function.
+> On the ngOnInit lifecycle method we can use the interval function and pass in a number. This is similar to setInterval where we pass in a number in milliseconds that will fire an event at every x milliseconds.
+
+   home.component.ts:
+      import { Component, OnInit } from '@angular/core';
+      import { interval } from 'rxjs';
+      export class HomeComponent implements OnInit {
+         constructor() { }
+         ngOnInit() {
+            interval(1000).subscribe(count => {
+               console.log(count); 
+            })
+         }
+      }
+
+> In the above, the observable will trigger and event every second which will console.log the count. We will now see in the browser's JavaScript console a number printed every second from the interval.
+> This is not an observable we built from the ground up but it is very close.
+> Observables do not stop emitting values just because we are not interested in them anymore. There are some observables that emit a value once and then they are done (e.g. http request) but there are other observables that keep on emitting values.
+> To stop observables from infinitely running and causing memory leaks, we should unsubscribe from any observables we are no longer interested in.
+> We will notice if we were to come back to the component which had the observable, we will see another observable is emitted. This could lead to more and more interval observables being emitted and counting and this is very bad as we can quickly run out of resources and slow down our application by introducing memory leak.
+> Memory leak is where our memory is occupied by data that we do not need.
+> To clear an observable, we would need to first store our subscriptions:
+
+   home.component.ts:
+      import { Component, OnInit, OnDestroy } from '@angular/core';
+      import { interval, Subscription } from 'rxjs';
+      export class HomeComponent implements OnInit, OnDestroy {
+         private firstObservableSubscription: Subscription;
+
+         constructor() { }
+         ngOnInit() {
+            this.firstObservableSubscription = interval(1000).subscribe(count => {
+               console.log(count);
+            })
+         }
+
+         ngOnDestroy() {
+            this.firstObservableSubscription.unsubscribe();
+         }
+      }
+
+> The private variable will be a type of Subscription which also needs to be imported by rxjs.
+> The .subscribe method now actually returns such a subscription and so when we subscribe we can store the subscription in our variable. Therefore, we are not storing the observable but we instantly subscribe and then store whatever the .subscribe returns i.e. the subscription.
+> We can now implement ngOnDestroy lifecycle method which we need to import from @angular/core which will force us to add the ngOnDestroy which we can now use our subscription and call the unsubscribe method.
+> This now means whenever we leave that component, we clear that subscription and prevent memory leak.
+> This is an important step to understanding Observables.
+> It is important to note, all observables provided by Angular (for example params) are managed by Angular and therefore we do not need to unsubscribe to these observables because Angular handles the unsubscribe behind the scenes.
