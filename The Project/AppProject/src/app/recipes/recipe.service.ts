@@ -20,7 +20,7 @@ export class RecipeService {
          ]
       ),
       new Recipe(
-         'Lamb chops on a mediterranean salad',
+         'Lamb chops & mediterranean salad',
          'Another super recipe that is a must try.',
          'https://cdn.pixabay.com/photo/2017/07/16/10/43/recipe-2508859_960_720.jpg',
          [
@@ -37,6 +37,10 @@ export class RecipeService {
 
    getRecipes() {
       return this.recipes.slice();
+   }
+
+   getRecipe(index: number) {
+      return this.recipes[index];
    }
 
    addIngredientsToShoppingList(ingredients: Ingredient[]) {
