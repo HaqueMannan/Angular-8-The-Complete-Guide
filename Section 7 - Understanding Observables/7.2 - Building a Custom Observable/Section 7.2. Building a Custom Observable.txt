@@ -1,0 +1,40 @@
+> The interval observable is close to a custom observable because it is not coming from an Angular feature, but this is still kind of a utility function that gives us a predefined observable that fires a number every second. This helped us to understand observables.
+> We can however, rebuild this manually.
+
+   home.component.ts:
+      import { interval, Subscription, Observable } from 'rxjs';
+      ...
+      export class HomeComponent implements OnInit, OnDestroy {
+         ngOnInit() {
+            const customIntervalObservable = Observable.create(observer => {
+               let count = 0;
+               setInterval(() => {
+                  observer.next(count);
+                  count++;
+               }, 1000);
+            });
+
+            customIntervalObservable.subscribe(data => {
+               console.log(data);
+            });
+         }
+      }
+
+> First we need to create a variable and set this to an Observable which we need to import from rxjs. We can call the .create method on the Observable. This will create our new observable.
+> The create takes in a function, which in the above we passed in an anonymous arrow function. This will receive an observer argument from rxjs automatically.
+> The observer is the part that is interested in being informed about new data, errors or the observable being completed.
+> Our job is to tell the observer about new data, an error or about the observable being completed. We are not responsible for listening because the observer is the listener. We get the listening part as part of the argument and we need to tell it of the three scenarios.
+> We can use the regular setInterval method which receives an anonymous function and a number as arguments.
+> We can use our observer and we have methods such as .next which allows us to emit a new value.
+> The observer has a couple of important methods which are .next .error and .complete for the three observer scenarios mentioned above.
+> In the above we create a let variable to store the count. We pass the count variable in the observer.next() method and then we increment the count by +1. Therefore, whenver setInterval fires and we let our observer know about the new data in the .next() method.
+> We can now subscribe to our custom observable as we seen before. We called the argument data to prevent naming confusion but could have called it count.
+> We should see the same results as we did before using the interval observable but we have now built our own custom interval observable.
+> This is roughly what is happening under the hood of the built in interval observable.
+> We can unsubscribe by storing the custom subscription as a variable of the type subscription and calling the unsubscribe method on the variable as we seen before.
+
+   home.component.ts:
+      this.firstObservableSubscription = customIntervalObservable.subscribe(data => { ... }
+      ngOnDestroy() {
+         this.firstObservableSubscription.unsubscribe();
+      }
