@@ -1,0 +1,102 @@
+> In around 90% of all cases when we subscribe to an observable we would pass the first argument where we are interested in the new data we are getting.
+> Errors are especially important in relation to http request and error handling.
+> Using the below example we can fake an error and see how we can setup errors in our observables.
+
+   home.component.ts:
+      ...
+      const customIntervalObservable = Observable.create(observer => {
+         let count = 0;
+         setInterval(() => {
+            observer.next(count);
+
+            if (count > 3) {
+               observer.error(new Error('Count is greater than 3!'));
+            }
+
+            count++;
+         }, 1000);
+      });
+
+> We use an if statement to see if the count is greater than 3 and then use the .error method on our observer to throw a new Error message.
+> We will now notice at count 4 the observer will throw an error with our message but it will also print the count number 4 in the terminal because it is the last value it emits before the if statement condition is true triggering the error message. There are no more other values emitted and the subscription ends.
+> When an observable throws an error, it is done and it will not emit any other values and so it dies. In this case we do not need to unsubscribe to the observable. However, we can still implement the unsubscribe method and this is not an issue.
+> This is how we can throw our own errors. It is now important to know how to handle errors from observables.
+> We can pass another arguments to subscribe. The first argument is the data function and the second argument is the function that gets called when an error occurs.
+
+   home.component.ts:
+      ...
+      this.firstObservableSubscription = customIntervalObservable.subscribe(count => {
+         console.log(count);
+      }, error => {
+         console.log(error);
+         alert(error.message);
+      })
+
+> We get the error as an argument. The simplest thing we can do here is console.log the error. We can do so much more with the error for example send it to the backend and store it in a database, show an error message alert to the user, etc.
+> We will no longer see the red error message in the console, instead we would see a regular console log of the error message. We are now handling the error.
+
+> Completing an observable is different to when an observable dies via an error. Completing can be a normal process in an observable.
+> The interval observable by default does not complete and it will emit new values until the end of time. A HTTP request on the other hand will complete. It completes whenever a response by the server is available.
+> When we build our own observable from the ground up we can also complete this manually. In the end we are defining how our observable behaves.
+
+   home.component.ts:
+      ...
+      const customIntervalObservable = Observable.create(observer => {
+         let count = 0;
+         setInterval(() => {
+            observer.next(count);
+
+            if (count == 2) {
+               observer.complete();
+            }
+
+            if (count > 3) {
+               observer.error(new Error('Count is greater than 3!'));
+            }
+
+            count++;
+         }, 1000);
+      });
+
+> We can call on the observer the .complete method without needing to pass any arguments.
+> When we call complete, the observable will come to a halt.
+> In the above, it will print to the console 1 and then 2 and that is it. It does not log anything else or reach our error condition because we complete the observable before it gets there.
+> It is important to understand and keep in mind that whenever an observable completes, it is really done. There are no other values emitted thereafter.
+> If we want to react to that completion, we can add a third argument to the subscribe method which is our completion handler function.
+
+      home.component.ts:
+      ...
+      this.firstObservableSubscription = customIntervalObservable.subscribe(count => {
+         console.log(count);
+      }, error => {
+         console.log(error);
+         alert(error.message);
+      }, () => {
+         console.log('Completed!');
+      })
+
+> This is a function that gets no arguments because .complete does not pass any arguments and it is simply a function whereby we can do something such as a clean up or whatever we need to do.
+> It is important to note that we do not need to unsubscribe if our observable did complete but again we might not know that and we can still use the unsubscribe without getting an error.
+> It is also important to keep in mind, the complete does not fire when we throw an error, for example in the below:
+
+      home.component.ts:
+      ...
+      const customIntervalObservable = Observable.create(observer => {
+         let count = 0;
+         setInterval(() => {
+            observer.next(count);
+
+            if (count == 5) {
+               observer.complete();
+            }
+
+            if (count > 3) {
+               observer.error(new Error('Count is greater than 3!'));
+            }
+
+            count++;
+         }, 1000);
+      });
+
+> Once we receive the error, even though the observable is technically complete by the error, this does not trigger the complete observable. Therefore, in the above we will not see our completed log because the condition is not triggered after the error condition.
+> This is one important characteristic we need to keep in mind about observables. When it cancels due to an error, this is a different thing to when it completes. An error cancels the observable and it does not complete it.
