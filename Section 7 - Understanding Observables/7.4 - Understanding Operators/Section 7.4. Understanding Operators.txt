@@ -1,0 +1,33 @@
+> Operators are extremely important to rxjs and Observables. This is the feature which turn Observables into constructs.
+> If we have an observable and an observer we of course get data and we listen to that with a subscription. However, sometimes we do not need the raw data and we might want to transform it or filter out certain data points which we could do inside of our subscription (or with a function we pass to our subscription). There is a more elegant way.
+> Instead of setting up the subscription, we can use built in operators inbetween the observable and the subscription.
+> This would mean that the data points first of all reach these operators that do something to the data (that something can be anything) and then we subscribe to the result of these operators.
+> Below is an example of adding the text round in front of the count data:
+
+   home.component.ts:
+      import { map } from 'rxjs/operators';
+      const customIntervalObservable = Observable.create(observer => { ... }
+      this.firstObservableSubscription = customIntervalObservable.pipe(map((data: number) => {
+         return 'Round: ' + (data + 1);
+      })).subscribe(count => {
+         console.log(data);
+      }
+
+> Note: for something as simple as the above we could add this to the console.log like so:
+
+   home.component.ts:
+      this.firstObservableSubscription = customIntervalObservable.subscribe(count => {
+         console.log('Round: ' + (count + 1));
+         ...
+      }
+
+> However, for much more complex logic, we would probably want to do this outside of the subscribe callback functions.
+> This allows us to change the return data from an observable that we did not write and cannot change the original code. This is where operators are important.
+> we use our subscription variable and call on a .pipe method.
+> Every observable has a .pipe method as it is built into rxjs.
+> We can import Observables from rxjs/operators which will provide us all the built in operators such as the map operator.
+> We call the map as a function inside of the .pipe and this takes in an anonymous function and that function gets the data that we would otherwise get in our first callback function in .subscribe. This is the current data of the observable that is being emitted by the observable.
+> We then return a new transformed data. We could return the current data in which case the map operator will be useless.
+> We would add this .pipe code before calling on the .subscribe method so that we would get the new changed data. We would now see the new transformed data printed to the console.
+> With .pipe we can add one or more operators and we simply add them as arguments to the .pipe method. The .pipe method takes in an unlimited amount of arguments and each argument would be an operator imported from rxjs/operators.
+> We can learn more about the various operators from https://www.learnrxjs.io/
