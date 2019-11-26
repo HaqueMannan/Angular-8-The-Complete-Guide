@@ -1,0 +1,38 @@
+> Subject is the final important construct we should understand.
+> Previously if we wanted a button to update and display a text based on the click event we would have used event emitters to perform this. However, we can use a much better and recommended way of doing this.
+> A Subject is something we would need to import from rxjs.
+
+Previous code:
+   user.service.ts:
+      import { Injectable, EventEmitter } from "@angular/core";
+
+      @Injectable({ providedIn: 'root'})
+      export class UserService {
+         activatedEmitter = new EventEmitter<boolean>();
+      }
+
+New code:
+   user.service.ts:
+      import { Injectable } from "@angular/core";
+      import { Subject } from "rxjs";
+
+      @Injectable({ providedIn: 'root'})
+      export class UserService {
+         activatedEmitter = new Subject<boolean>();
+      }
+
+> The Subject is very similar to EventEmitter and we use it very similarly. So instead of calling .emit we use .next:
+
+   user.component.ts:
+      export class UserComponent implements OnInit {
+         onActivate() {
+            this.userService.activatedEmitter.next(true);
+         }
+      }
+
+> A Subject is a special kind of observable. The observables we have seen are considered passive i.e. it wraps a callback, event, ... whereas the Subject is considered active as we can actively call the next method on it from outside.
+> This is more perfect when we want to use it as an event emitter. So where we have something that needs to be actively triggered by the user in our application such as a click event, we can use Subjects to actively call the observable.
+> While it technically works in a similar way to an EventEmitter, using the Subject is the more recommended way. These are much more efficient behind the scenes.
+> An important note, just like with observables, we should unsubscribe to Subjects whenever we do not need them.
+> Subjects only works if we use them as cross component event emitters where we manually call the next method. We do not use Subjects instead of EventEmitters when we are using @Output() - we use Angular EventEmitter.
+> We only use Subjects to communicate across components through services i.e. a mechanism where we in the end subscribe to somewhere.
