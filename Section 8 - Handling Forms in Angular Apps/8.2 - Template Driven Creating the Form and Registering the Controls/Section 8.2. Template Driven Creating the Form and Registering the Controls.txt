@@ -1,0 +1,28 @@
+> In the app.module.ts file we need to ensure that we import the FormsModule from @angular/forms:
+
+   app.module.ts:
+      import { FormsModule } from '@angular/forms';
+      @NgModule({
+         ...
+         imports: [
+            ...
+            FormsModule,
+         ]
+      })
+
+> This built-in module shipping with Angular includes a lot of forms related functionalities and is actually needed to get the template-driven approach to work.
+> With this import in place, Angular will actually automatically create a JavaScript representation of the form for us when it detects a <form> element in the HTML code.
+> We can treat the <form> element as a selector for some Angular directive which then creates such a JavaScript representation of the form for us.
+> We cannot see the form representation and this would be empty because Angular will not automatically detect our <input> elements in the form.
+> The reason for this is because we may not want to add all the different form elements as controls (i.e. what is captured in the JavaScript object form representation) to our forms.
+> We still need to register form controls manually and tell Angular which form elements should be actual controls for our form.
+> In the template-driven approach to register a form input control, we simply select the input we want and add to it a ngModel attribute.
+
+   app.component.html:
+      <input type="text" id="username" class="form-control" ngModel name="username">
+
+> The ngModel is the exact same directive for two-way binding; however, we do not need to wrap it in [()] and will be enough to tell Angular that the input is actually a control of the form.
+> The ngModel is a directive made available in the @angular/form module.
+> To make this work, we need to provide Angular one more information i.e. the name of the control i.e. the key (in key:value pair). We do this by providing the normal HTML attribute name.
+> Therefore in the above example the key:value pair in the JavaScript object representation for the input field control would be username: value (the value is the user input in the input field).
+> This will now register the control in the JavaScript object.
