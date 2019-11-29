@@ -1,0 +1,23 @@
+> Angular's job is to allow us to retrieve the user entered values in our forms as well as to perform some validations in JavaScript/TypeScript (front end side).
+> We need to be able to parse the values the user enters and somehow have this in a JavaScript object representation of the form in our TypeScript to work with. For example
+
+   <form>                                                   {
+      <label>Name</label>                                      value: {
+      <input type="text" name="name">                             name: 'John',
+      <label>Email</label>                                        email: 'test@email.com'
+      <input type="text" name="email">                         }
+      <button type="submit">Save</button>                      valid: true
+   </form>                                                  }
+
+> This object will allow us to store key:value pairs of the input field and user input. We can also use it to store some meta-data such as whether the form is valid or invalid.
+> This is what Angular does for us. It gives us a JavaScript object representation of our HTML form and making it simple for us to retrieve user values and also see the state of the form in order to work with it.
+
+> Angular offers two approaches when it comes to handling forms.
+   1) Template-Driven - Angular infers the Form Object from the DOM
+   2) Reactive - Form is created programmatically and synchronised with the DOM
+
+The reactive approach is more complex whereby we define the structure of the form in TypeScript code and we also setup the HTML code and we manually connect them together. This approach provides us with a greater control over our forms.
+
+> It is important to note on the <form> element we do not have any attributes i.e. action attribute pointing to some route and we are also not defining the method attribute which typically would be POST.
+> The form should not get submitted to a server as part of a HTTP request because Angular should handle this form and therefore we do not have an action on the element.
+> Important Note: Angular is a single page application and we do not want to refresh the page when we submit a form to the server. Instead we would need to handle the form through Angular and then if we want to submit something to the server we need to reach out via Angular's HTTP service to the server.
