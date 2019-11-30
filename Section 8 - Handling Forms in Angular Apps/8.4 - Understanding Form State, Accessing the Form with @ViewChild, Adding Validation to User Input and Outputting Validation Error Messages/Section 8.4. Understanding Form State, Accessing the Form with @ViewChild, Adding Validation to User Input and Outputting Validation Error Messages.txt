@@ -1,0 +1,113 @@
+Understanding Form State:
+> Now that we are able to access the Angular JavaScript NgForm object, if we take a closer look at this automatically created object we can see a lot of properties.
+> The value property provides the key:value pair of the input provided by the user to the form controls we defined using the ngModel and name attributes.
+> However, we also have other meta-data of this form object such as which controls we registered in the controls: Object property, dirty, disabled, enabled, errors, etc.
+> We can dive deeper into some of the form properties such as: 
+   - dirty will be set to true if we changed something in the form
+   - disabled is false but will be true if we disabled the form
+   - invalid is false because we have not added any validators and therefore the form is not invalid and therefore,
+   - valid property will be true because nothing is invalid
+   - touched will be false if we did not click into the form fields (note this is different to dirty which requires a field to be changed)
+> This allows us to really understand the state of our form and how we can use these properties in changing the user experience for example disabling the submit button if the form is not valid.
+
+
+@ViewChild:
+> We now know how to register controls, how to submit the form and what properties this NgForm object contains.
+> Currently we submit the form by passing the form which we get via ngForm to our (onSubmit) method. This is absolutely fine and probably the approach we will use in many use cases.
+> There is another approach we can use. We can use the @ViewChild to access a element which holds a local reference in our TypeScript code. Below is an example:
+
+   app.component.html:
+   <form (ngSubmit)="onSubmit()" #f="ngForm">
+
+   app.component.ts:
+      import { Component, ViewChild } from '@angular/core';
+      import { NgForm } from '@angular/forms';
+      export class AppComponent {
+         @ViewChild('f', {static: false}) signupForm: NgForm;
+         onSubmit(form: NgForm) {
+            console.log(this.signupForm);
+         }
+      }
+
+> We need to import @ViewChild from @angular/core and we pass in the local reference that we want to get access to the element which has the local reference. We can then store this as a variable which will be of the type NgForm.
+> The @ViewChild takes a second options argument which we would set static: false.
+> Our component now has access to the NgForm object which we can now output in our onSubmit method.
+> If we now submit this form again we would continue to get the same NgForm object as before.
+> This provides us the exact same form without passing it to onSubmit. This is especially useful if we need to access the form before the point we submit the form. We can perform some client side validation before passing the data along to our server.
+
+
+Adding Validation:
+> While we should validate on the server, we can greatly enhance our user experience and security by validating on the client as well.
+> A typical validation is to ensure the form fields are not empty and if an email is required as an input, we actually received a valid email from the user input.
+> Since we are using a template-driven approach, we can only add the validators in the template.
+> Adding the HTML required attribute allow Angular to detect it and act as a selector for a built-in directive shipped with Angular. This will automatically configure our form to take this into account and make sure the field is not empty else the form is considered invalid.
+
+   app.component.html:
+      <label for="username">Username</label>
+      <input type="text" id="username" class="form-control" ngModel name="username" required>
+      <label for="email">Mail</label>
+      <input type="email" id="email" class="form-control" ngModel name="email" required email>
+
+> There is also an email directive we can use. This is not a built in HTML attribute but something we can use to ensure a valid email is entered in the input.
+> With this in place, if we now submit our form we are still able to submit the form but if we were to now look at the NgForm object's valid attribute, this will be set to false.
+> If we were to enter values in the input field, provided they are valid, this valid attribute will be set to true when we submit the form.
+> If we dived into the control attribute and looked at the control itself and it's attributes we would also see a valid attribute which will be set to true or false based on the input.
+> Angular now tracks the state of this form and correctly informs us and gives us the change to query the form to see whether the form is valid or not.
+> Angular tracks on both the form level as well as the control level.
+> Angular dynamically adds its own css classes to our controller elements such as ng-dirty, ng-touched, ng-valid, etc. If a form field was invalid, angular would add an ng-invalid class instead.
+> Therefore, we have three ways to check the validation of our forms whether on a form level, controller level or the css ng classes. With this information we can style our form input fields conditionally.
+
+> Visit https://angular.io/api/forms/Validators to see what validator class ships with Angular. These are all built-in validators which are the methods that actually gets executed (and which you later can add when using the reactive approach).
+> For the template-driven approach, we need the directives. We can find their names by searching for "validator" in the official docs: https://angular.io/api?type=directive - everything marked with "D" is a directive and can be added to our template.
+> Additionally, we might also want to enable HTML5 validation (by default, Angular disables it). We can do so by adding the ngNativeValidate to a control in our template.
+
+> With this information we can take advantage of this in our form. Before diving into the CSS classes, the easiest way of taking advantage is on the submit button. We can disable the button if the form is not valid. We can use property binding for this:
+
+   app.component.html:
+      <form (ngSubmit)="onSubmit()" #f="ngForm">
+         <button class="btn btn-primary" type="submit" [disabled]="!f.valid">Submit</button>
+      </form>
+
+> We have access to the form element values on the #f local reference. We are checking whether is not valid i.e. valid is not set to true (valid: false). If this condition is true, we then set the disabled attribute to disable the button.
+> This will now be visible and the button will be disabled until the form is valid which will enable the button.
+> We can also take advantage of these CSS classes which are added automatically by Angular and in the component.css file we can add visual styles for our user experience:
+
+   app.component.css:
+      .ng-invalid {
+         border: 1px solid red;
+      }
+
+> The above will display a red border for all elements with the ng-invalid class. However, Angular adds this to every control element in the form including the form itself and therefore we will see a red border around the form itself.
+> Since this is all to do with CSS styling, there are many different ways to achieving the end result. The best way to handle this in CSS is to be explicit to which elements we want to apply this to:
+
+   app.component.css:
+      input.ng-invalid {
+         border: 1px solid red;
+      }
+
+> With the above we should now see only the input elements with the ng-invalid classes have the red border. However, we also now have the red border from the start which may not be a good user experience as the user does not have a chance to input a value before being displayed the visual error.
+
+   app.component.css:
+      input.ng-invalid.ng-touched {
+         border: 1px solid red;
+      }
+
+> The above now will allow the user to click into an input without displaying the red border, but if they decide the leave the input and it is invalid the red border will display.
+> We are now taking advantage of the form state handled by Angular such as disabling the button and displaying a visual back to the user.
+
+
+Outputting Validation Errors:
+> We could take this further by adding a element with the error message and using *ngIf to conditionally display the message on invalid inputs.
+
+   app.component.html:
+      <div>
+         <label for="email">Mail</label>
+         <input type="email" id="email" ngModel name="email" required email #email="ngModel">
+         <span class="help-block" *ngIf="!email.valid && email.touched">Please enter a valid email!</span>
+      </div>
+
+> We can add a local reference on the input field and set this to ngModel. This ngModel directive kind of  exposes some additional information about the control it creates for us on the overarching form.
+> With this in place we have access to the form control and now use the *ngIf to conditionally check the control input.
+> Therefore, in the above the span will be attached to the input if the email control is invalid and the input field has been touched in order to give the user a chance to enter something in the input field before displaying the input error.
+> This is another way to take advantage of the form state managed by Angular.
+> We now have the tools to provide a pleasant user experience and displaying the correct errors and warnings and styling the form accordingly depending on the state of the form.
