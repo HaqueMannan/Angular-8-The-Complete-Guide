@@ -1,0 +1,99 @@
+> We can create an element whereby the user can dynamically add form controls to our form for example we can have a button to allow a user to add their hobbies.
+> We may want to add the control to an array of controls because we may have multiple hobbies. We can add a click listener
+
+   app.component.html:
+      <button type="button" class="btn btn-outline-dark mb-3" (click)="onAddHobby()">Add Hobby</button>
+
+   app.component.ts:
+      import { FormGroup, FormControl, Validators, FormArray } from '@angular/forms';
+      export class AppComponent implements OnInit {
+         signupForm: FormGroup;
+         ngOnInit() {
+            this.signupForm = new FormGroup({
+               'hobbies': new FormArray([]),
+            });
+         }
+         onAddHobby() {
+            const control = new FormControl(null, Validators.required);
+            (<FormArray>this.signupForm.get('hobbies')).push(control);
+         }
+      }
+
+> We need to add a new type of control to the overall FormGroup. This is a FormArray which we need to import from @angular/forms.
+> A FormArray holds an array of controls, therefore, we pass in an array to initialise it. We can also initialise some new FormControl constructors or leave it empty to have no FormControl at the beginning.
+> When we click the button that triggers the onAddHobby function we want to add a new hobby to that array. We do this by accessing the form and calling the .get method to get access to the hobbies property.
+> We need to inform TypeScript that it is of the type FormArray to prevent an error. We rarely have to do this but in this situation we need to explicitly cast this using the lower than and greater than symbols (<>) and then wrapping the whole thing in parenthesis.
+
+   (<FormArray>this.signupForm.get('hobbies'))
+
+> Everything wrapped in the parenthesis is treated as a form array and so we can push a new control on this array. If we did not cast this we would get an error.
+> The hobby should be something the user defines and so we would create the FormControl with no default value i.e. null.
+> We can continue to use validators for our control ie. required so that the hobby input cannot be empty.
+> We can now push the control on our array of controls.
+> We are able to create controls but we are unable to see it. We would need to synchronise this with our HTML template.
+
+   app.component.html:
+      <div formArrayName="hobbies">
+         <h4>Your Hobbies</h4>
+         <button type="button" (click)="onAddHobby()">Add Hobby</button>
+         <div *ngFor="let hobbyControl of signupForm.get('hobbies').controls; let i = index">
+            <input type="text" [formControlName]="i">
+         </div>
+      </div>
+
+> On the outer <div> we can add a directive of formArrayName which will tell Angular which FormArray to connect to.
+> We need to loop through all the controls in the array using a *ngFor loop. We also want to get the index of the current iteration which we would need to assign the input to one of these dynamically created controls.
+> We need to add formControlName to synchronise this input with the dynamically created input. This dynamically created input will not have a name chosen by us, but it is in an array. The name will simply be the index within the array which is why we need to retrieve the index in the for loop.
+> We can simply use property binding for formControlName because we are now no longer passing a string but passing this local variable we are creating here i.e. the i variable.
+> With this in place we are now able to add dynamical form controls using an array of form controls.
+> This is how we can use the FormArray with the reactive approach.
+
+
+
+IMPORTANT INFORMATION:
+> The code to access controls of our FormArray above will fail in production code on the latest Angular version. It would seem to be a "silent" bug which does not show any errors in the development environment.
+> The JiT compiler is happy with the code as shown above, but the AoT compiler is not and therefore the suggested change below is needed for a production build:
+
+Above Code Example:
+   app.component.html:
+      <div *ngFor="let hobbyControl of signupForm.get('hobbies').controls; let i = index">
+         <input type="text" formControlName="i">
+      </div>
+
+The Fix:
+> We can easily fix this by outsource the "get the controls" logic into a method of our .component.ts file. We can then update the component.html file to use the method in the *ngFor loop:
+
+   app.component.ts:
+      import { FormGroup, FormControl, Validators, FormArray } from '@angular/forms';
+      export class AppComponent implements OnInit {
+         signupForm: FormGroup;
+
+         getControls() {
+            return (<FormArray>this.signupForm.get('hobbies')).controls;
+         }
+      }
+
+   app.component.html:
+      <div *ngFor="let hobbyControl of getControls(); let i = index">
+         <input type="text" formControlName="i">
+      </div>
+
+Alternative Fix:
+> Alternatively, you can set up a getter and use an alternative type casting syntax:
+
+   app.component.ts:
+      import { FormGroup, FormControl, Validators, FormArray } from '@angular/forms';
+      export class AppComponent implements OnInit {
+         signupForm: FormGroup;
+
+         get controls() {
+            return (this.signupForm.get('hobbies') as FormArray).controls;
+         }
+      }
+
+   app.component.html:
+      <div *ngFor="let hobbyControl of controls; let i = index">
+         <input type="text" formControlName="i">
+      </div>
+
+> This adjustment is required due to the way TS works and Angular parses your templates (it doesn't understand TS there).
