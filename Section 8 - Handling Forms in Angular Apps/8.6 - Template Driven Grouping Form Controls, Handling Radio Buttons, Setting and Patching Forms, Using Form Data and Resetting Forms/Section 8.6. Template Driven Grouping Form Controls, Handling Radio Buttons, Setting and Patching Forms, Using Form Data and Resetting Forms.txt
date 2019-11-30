@@ -1,0 +1,170 @@
+Grouping Form Controls:
+> We may want to group some key:value pairs together for example the username and email or security question and answer on our value object we get from NgModel when we submit the form in order to have some structure in our object.
+> It may also be nice to validate on the individual groups of inputs.
+> This is easy to do with the template driven approach. We can add a ngModelGroup directive on the wrapping element.
+
+   app.component.html:
+      <div id="user-data" ngModelGroup="userData" #userData="ngModelGroup">
+         <div>
+            <label for="username">Username</label>
+            <input type="text" id="username" ngModel name="username" required>
+         </div>
+         <div>
+            <label for="email">Mail</label>
+            <input type="email" id="email" ngModel name="email" required email #email="ngModel">
+         </div>
+      </div>
+      <p *ngIf="!userData.valid && userData.touched">User data is invalid!</p>
+
+> The ngModelGroup requires a string value which will act as the key name for the group. In the above this is named userData.
+> If we were to now submit the form and look at the NgModel object value field, we would now see a form group of userData which is another field object storing the username and email key:value pairs.
+> The controls field has also changed and we now have a userData control with all the properties we know that a control has e.g. ng-dirty, ng-touched, etc. We can now check the validity of the form group.
+> We can also get access to the JavaScript object representation by adding a local reference on the form-group element holding the directive and setting its value to ngModelGroup.
+> We can add a message if the whole group is not valid.
+> We now have a very fine grain control over our form with all the various tools.
+
+
+Handling Radio Buttons:
+> Below is an example of incorporating a radio button as a control:
+
+   app.component.ts:
+      export class AppComponent {
+         genders = ['male', 'female'];
+      }
+   
+   app.component.html:
+      <div class="radio" *ngFor="let gender of genders">
+         <label>
+            <input type="radio" ngModel="male" name="gender" [value]="gender" required> {{ gender }}
+         </label>
+      </div>
+
+> We have an array of values which we would want to make a radio button from. Using the ngFor we can loop through the array items and create a radio button for each item. Note: we could have hardcoded the value without an array.
+> We use the ngModel to turn the radio button into a control.
+> We can use one-way binding to set the default value of the radio button so that one of the radio buttons is selected at the start when we load the form and we can also use the required to make this a mandatory field.
+> Radio buttons are treated exactly like any other input for the template driven approach in Angular.
+
+
+Setting and Patching Forms:
+> We can set the value of our input using two different methods within our TypeScript file.
+
+   app.component.ts:
+      export class AppComponent {
+         @ViewChild('f', {static: false}) signupForm: NgForm;
+
+         suggestUserName() {
+            const suggestedName = 'Superuser';
+            this.signupForm.setValue({
+               userData: {
+                  username: suggestedName,
+                  email: ''
+               },
+               secret: 'pet',
+               questionAnswer: '',
+               gender: 'male'
+            });
+         }
+      }
+
+   app.component.html:
+      ...
+      <button type="button" (click)="suggestUserName()">Suggest an Username</button>
+
+> The first method is to use the setValue method on our NgForm variable. This allows us to set the value of the whole form.
+> We need to pass in a JavaScript object that is exactly representation of our form. Therefore, we must provide values for all controls in the form even if we set this to an empty string or the default values.
+> We can hook the suggestedName function to our button using a click event listener.
+> This will now populate the username field with the suggestedName. However, there is one drawback with this approach. If we already have some values entered in the other fields, they will be replaced by the values defined in the function.
+> This is not necessarily the best approach but it does demonstrate how we can set the values of all controls with one convenient command of setValue method.
+> Important note: the setValue must receive an exact copy of the form value object in order to overwrite the value of each control.
+
+> The second and better approach is to access the form object on our NgForm variable and then use the patchValue method. This method is only available on the wrapper form object and not on the NgForm itself.
+> We pass in a JavaScript object where we provide an override to specific form controls.
+
+   app.component.ts:
+      export class AppComponent {
+         @ViewChild('f', {static: false}) signupForm: NgForm;
+
+         suggestUserName() {
+            const suggestedName = 'Superuser';
+            this.signupForm.form.patchValue({
+               userData: {
+                  username: suggestedName,
+                  email: ''
+               }
+            });
+         }
+      }
+
+> With this in place, only the username will be overwritten when we click the button and all other form values will remain intact.
+> These are the two approaches we can use to setValue and patchValue to our form control fields using functions from our component TypeScript file.
+> The setValue is used to set the whole form and patchValue is used to override parts of the form.
+
+
+Using Form Data:
+> So far we have learnt how to create a form using the template driven approach and use the submit button to display the NgForm in the console.
+> We can now use the form data and do something with it. In the below example we can display the summary of the form data:
+
+   app.component.html:
+      <div class="row" *ngIf="submitted">
+         <div class="col-sm-12">
+            <h3>Your Data</h3>
+            <p>Username: {{ user.username }}</p>
+            <p>Email: {{ user.email }}</p>
+            <p>Secret Question: Your first {{ user.secretQuestion }}</p>
+            <p>Answer: {{ user.questionAnswer }}</p>
+            <p>Gender: {{ user.gender }}</p>
+         </div>
+      </div>
+
+   app.component.ts:
+      export class AppComponent {
+         @ViewChild('f', {static: false}) signupForm: NgForm;
+         user = {
+            username: '',
+            email: '',
+            secretQuestion: '',
+            secretAnswer: '',
+            gender: ''
+         }
+         submitted = false;
+         onSubmit() {
+            this.submitted = true;
+            this.user.username = this.signupForm.value.userData.username;
+            this.user.email = this.signupForm.value.userData.email;
+            this.user.secretQuestion = this.signupForm.value.secret;
+            this.user.secretAnswer = this.signupForm.value.questionAnswer;
+            this.user.gender = this.signupForm.value.gender;
+         }
+      }
+
+
+> In the above example we display the details of the form once the form has been submitted.
+> The component.ts file will hold a user property which have properties that do not necessarily have to match the form control properties as it is a brand new JavaScript object that is not directly related to our form.
+> We may also want a submitted property to track if the form has been submitted.
+> We have a onSubmit() function which we can call to update the user property values when the form has been submitted and also change the submitted property value to true.
+> We can now use *ngIf to conditionally check if the submitted is set to true and then display the user data within our HTML file.
+> This is how we can extract the data from the form and use that data in our application.
+
+
+Resetting the Form:
+> Now that we are able to submit a form and extract all the data from the form, we may want to now reset the form.
+> To reset the form, in the TypeScript file on our NgForm variable we can call the reset method:
+
+   app.component.ts:
+      export class AppComponent {
+         @ViewChild('f', {static: false}) signupForm: NgForm;
+
+         submitted = false;
+         onSubmit() {
+            ...
+            this.signupForm.reset();
+         }
+      }
+
+> This method will not only empty all the form input fields (note: we could also do this with setValue) it will also reset the state i.e. meta data such as dirty, valid, touched, etc.
+> If we want, we can pass the same object as in the setValue() to reset() which will then reset the form to specific values.
+
+
+Conclusion:
+> We now have a great overview over how we can quickly create powerful forms with Angular and the template driven approach.
+> This approach might be well suited for the majority of our use cases.
