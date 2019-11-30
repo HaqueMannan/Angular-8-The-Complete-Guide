@@ -1,0 +1,59 @@
+> We now know how to configure our form to add some controls by placing ngModel on the inputs. We now want to make our form submitable so that we can actually see the JavaScript object representation of what the user submitted.
+> We can go into the component.ts file and create a new method for example onSubmit which would be triggered whenever the form is submitted by the user. In the onSubmit method we want to output whatever the user entered in the input fields.
+
+   app.component.ts:
+      export class AppComponent {
+         onSubmit() {
+            console.log('Submitted!');
+         }
+      }
+
+> We first need to call this method. In the component.html template file we need to be able to call on the onSubmit method.
+> We may think the <button> element is a great place to have a click listener because this is the button the user will click when they want to submit the form. However, this is not the case.
+> The <button> element has a type="submit" and so if we click it the default behaviour of HTML will be triggered. If we have a button in a <form> element, this button will submit the form and send a request normally but will also trigger a JavaScript submit event which is built into HTML and JavaScript.
+> Angular takes advantage of the default behaviour and provides us with a ngSubmit directive we can place on the <form> element as a whole.
+> The ngSubmit only gives us one event we can listen to and so must wrap it in brackets. This event made available by the ngSubmit directive will be fired whenever this form is submitted i.e. when the default HTML/JavaScript behaviour is triggered.
+> We can call our onSubmit method as the value to ngSubmit.
+
+   app.component.html:
+      <form (ngSubmit)="onSubmit()">
+         <button class="btn btn-primary" type="submit">Submit</button>
+      </form>
+
+> If we now click the submit button, the form will trigger the ngSubmit and call on our method called onSubmit and print Submitted in the console.
+> To see the form object representation we need to go to the template and add a local references on HTML elements in order to get access to them. Below is an example:
+
+   app.component.html:
+      <form (ngSubmit)="onSubmit() #f>
+
+> Using the hash followed by a local reference name we can pass this local reference in our onSubmit method.
+> In our component.ts file we can access this value as seen below:
+
+      app.component.ts:
+      export class AppComponent {
+         onSubmit(form: HTMLFormElement) {
+            console.log(form);
+         }
+      }
+
+> We have access to the local reference as an argument which we create a variable of the type HTMLFormElement. We can then output the variable in onSubmit method.
+> If we now submit the form we would now see the form object in the console.
+> This is still not what we want as it is not a JavaScript object created by Angular. The object is there but we need to know how to get to it.
+> To get access to this object we need to set the local reference equal to ngForm.
+
+   app.component.html:
+      <form (ngSubmit)="onSubmit() #f="ngForm">
+
+> This tells Angular to give us access to the JavaScript object that it created for us automatically.
+> The form variable in the onSubmit method will now be of the type NgForm which we need to import from @angular/form which is what we are getting access to from the template.
+
+   app.component.ts:
+      export class AppComponent {
+         import { NgForm } from '@angular/forms';
+         onSubmit(form: NgForm) {
+            console.log(form);
+         }
+      }
+
+> If we now use the form and enter some data in the input fields and submit the form, we should now be able to see the JavaScript object representation of the form.
+> We get a NgForm object with a lot of properties which has a value property. If we expand this, we should be able to see key:value pairs of our name of the controls and user input values.
