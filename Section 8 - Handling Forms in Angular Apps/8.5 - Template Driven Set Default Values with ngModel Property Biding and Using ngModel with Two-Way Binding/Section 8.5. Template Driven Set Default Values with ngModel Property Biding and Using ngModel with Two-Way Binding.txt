@@ -1,0 +1,40 @@
+> We can use the ngModel with property binding to bind an input with a value. We do this by wrapping the ngModel in square brackets and then assigning it a value as seen below:
+
+   app.component.html:
+      <label for="secret">Secret Questions</label>
+      <select [ngModel]="defaultQuestion" name="secret">
+         <option value="pet">Your first Pet?</option>
+         <option value="teacher">Your first teacher?</option>
+      </select>
+
+   app.component.ts:
+      export class AppComponent {
+         defaultQuestion = 'pet';
+      }
+
+> We can hardcode the value or set a property in the TypeScript file and bind it to the property as seen above. This will set the option with the value of pet.
+> This will work for any input element and not only the <select> element.
+
+> Sometimes we may want to instantly react to changes. Currently the NgModel is either used without any binding or with one way binding.
+> We may wan to instantly check for something or simply repeat what the user entered. Below is an example of using two-way binding for the latter example:
+
+   app.component.html:
+      <div class="form-group">
+         <textarea name="questionAnswer" rows="3" ngModel></textarea>
+      </div>
+      <p>Your reply: {{ answer }}</p>
+
+   app.component.ts:
+      export class AppComponent {
+         answer = '';
+      }
+
+> We have a textarea form input whereby we would instantly repeat the text input into our <p> element.
+> To add two-way binding we would use the square and round brackets on ngModel. We would bind this to a property from our TypeScript file e.g. answer.
+> The above will now two-way bind our property to the input text and will instantly display whatever is input into the textarea.
+> This control value will be updated with every keystroke, however, our submit button will provide us a snapshot of the value in a point in time that we click the submit button.
+> Two-way binding is still possible and we can still use ngModel with two-way binding.
+> We have now seen all three forms of ngModel:
+   1) No binding - tells Angular that an input is a control
+   2) One-way binding - to give the control a default value
+   3) Two-way binding - to instantly output or do whatever we want to do with the value
