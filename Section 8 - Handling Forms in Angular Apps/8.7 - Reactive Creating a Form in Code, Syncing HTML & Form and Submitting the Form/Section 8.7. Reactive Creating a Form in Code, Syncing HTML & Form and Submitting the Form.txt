@@ -1,0 +1,95 @@
+> In the reactive approach, the form is created programmatically and therefore we start in the TypeScript code.
+> We would create a new property that will hold our form at the end. Angular offers us a lot of tools to quickly create a programmatic form.
+
+   app.component.ts:
+      import { FormGroup } from '@angular/forms';
+
+      export class AppComponent {
+         signupForm: FormGroup;
+      }
+   
+   app.module.ts:
+      import { ReactiveFormsModule } from '@angular/forms';
+      @NgModule({
+         ...
+         imports: [
+            ReactiveFormsModule
+         ],
+      })
+
+> We would want to give the form property a name and then set this of the type FormGroup which we need to import from @angular/forms. This package contains a lot of classes we will work with. We do not need to set an initial value for this property.
+> Note: in the template driven approach we imported the NgModel which was an automatically created wrapper we could say. However, it was wrapping a FormGroup in the end because in Angular a form is a group of controls and what a FormGroup holds. Therefore, the overall form is just a FormGroup.
+> We now have a property that we can work with and will hold our form in the end.
+> For the reactive approach to work, we need to import ReactiveForms module in our app.module.ts file.
+> We do not need the FormsModule which was required for the template driven approach instead we need the ReactiveFormsModule which we need to import from @angular/forms.
+> We have now setup our component to build our own reactive forms which we would be able to connect to our HTML code.
+
+> We could initialise our form by setting a value to our FormGroup property immediately; however, it may be easier to create a method because there will be a lot of code.
+> We can create a OnInit lifecycle method on our component and then initialise our form here.
+
+   app.component.ts:
+      import { Component, OnInit } from '@angular/core';
+      import { FormGroup, FormControl } from '@angular/forms';
+
+      export class AppComponent implements OnInit {
+         signupForm: FormGroup;
+
+         ngOnInit() {
+            this.signupForm = new FormGroup({
+               'username': new FormControl(null),
+               'email': new FormControl(null),
+               'gender': new FormControl('male')
+            });
+         }
+      }
+
+> We should always initialise the form before rendering the template which is why we use the lifecycle method before the component is rendered.
+> We need to initialise our signupForm property to a new FormGroup and then pass in a JavaScript Object. We are theoretically done with our first created form. The JavaScript object configures the form and currently simply tells Angular that the form has no controls.
+> Controls are basically key:value pairs in the object we pass to the overall FormGroup.
+> We are wrapping the key names in a quotation marks to make sure that during minification, when the code gets mangled, this property name is kept because we would reference it in the HTML code. This might not be necessary, it might not get destroyed but we added to make sure this does not occur by wrapping it in a string.
+> We need to set the value to a new FormControl which should also be imported from @angular/forms. To this FormControl constructor we can pass in a couple of arguments:
+   - the first is the initial state/value of this control
+   - the second argument will be either the single validator or an array of validators we want to apply
+   - the third argument will be potential asynchronous validators
+> We set a initial state of null to have an empty field, but we could also pass a string which will be displayed in the input. In the above example we used null for the username and email but we used 'male' to set the default value for the radio button input control.
+> We should use the HTML file to see what input fields we have and create these properties/controls in our form.
+> With this a basic form has been initialised with three controls and this is now our first basic form.
+
+> We now need to connect our form that we created in our TypeScript file to our form setup in our HTML file so that our Form code synchronises with the HTML.
+> Angular does not know which of our TypeScript controls relate to which input in our template code. It does not actually know that our form should be attached to <form> element. Currently, Angular is auto-detecting that we have a <form> element and it creates a form for us. We do not want this behaviour and so we have add some directives to override the default behaviour.
+> We need to ensure we have the ReactiveFormsModule imported into our app.module.ts so that our directives would work correctly without errors.
+
+   app.component.html:
+      <form [formGroup]="signupForm">
+         <input type="text" id="username" formControlName="username">
+         <input type="text" id="email" formControlName="email">
+      </form>
+
+> The first directive we would add on the <form> element via property binding is the FormGroup directive. This simply tells Angular to take our own FormGroup and not to infer one automatically. We use property binding to pass our own FormGroup as an argument to the directive. We would therefore, reference our FormGroup property name i.e. the property storing our form.
+> The HTML form is now synchronised with the FormGroup we create in our TypeScript file. We still need to tell Angular which controls should be connected to which inputs in the template code.
+> On the input we have another directive called formControlName. We pass in the control name from our FormControl property to tell Angular what control this HTML input should be linked to within our TypeScript form.
+> Note: we could use property binding (see example below) but this is overly complicated if we just want to pass a string and it should continue to work.
+   [formControlName]="'username'"
+> We are now telling Angular that our HTML form should be connected to the stored signupForm property and in this HTML form the input should be connected to the control with the name username.
+> We can simply repeat this for all of our HTML inputs to link the input with the form controls.
+> With this setup we should be able to see that our HTML inputs now have the Angular classes added such as ng-untouched, ng-valid, etc. It will look like that our inputs in HTML are correctly synchronised to our form we created in TypeScript.
+
+> To submit the form we would continue to use the ngSubmit directive because we would still want to react to the default submit event which is fired by HTML/JavaScript. We can execute any of our own method we would like.
+
+   app.component.html:
+      <form [formGroup]="signupForm" (ngSubmit)="onSubmit()">
+
+   app.component.ts:
+      export class AppComponent implements OnInit {
+         signupForm: FormGroup;
+         ngOnInit() { ... }
+
+         onSubmit() {
+            console.log(this.signupForm);
+         }
+      }
+
+> The difference between the template driven approach is that we do not need to get access to the from via the local reference and this would no longer work anymore as we are not using Angular's auto form creation mechanism.
+> We do not need to get the local reference because we created the form on our own and we already have access to it in our TypeScript code. We can therefore simply log our signupForm FormGroup property. This is how we get access to the form.
+> If we were to submit the form and view the console we should see the FormGroup object and it has all the properties we already know. It also has the values which it correctly represents the object we passed in i.e. the key:value pairs when setting up the FormControl and the values from the HTML inputs.
+> The great thing about the reactive approach is that whatever setup in the TypeScript as an argument to the FormGroup constructor which makes up our form, that is what we get out as a value of the form and therefore we can bind it to our own model of our application and easily make sure the form structure mirrors the structure of our model.
