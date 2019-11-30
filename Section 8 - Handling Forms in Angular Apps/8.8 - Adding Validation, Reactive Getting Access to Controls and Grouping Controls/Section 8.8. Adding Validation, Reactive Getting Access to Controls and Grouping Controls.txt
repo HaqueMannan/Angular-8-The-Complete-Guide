@@ -1,0 +1,68 @@
+> In the template driven approach we would simple add required to the input element in our template code to make a input field a required field.
+> In the reactive approach we are not configuring the form in the template as we are only synchronising using the directives. Therefore, we configure this in the TypeScript code.
+> This is why the FormControl constructor takes in more than one arguments when setting up the control. The second argument is where we would specify some validators.
+> We can either pass in on validator or an array.
+> We add a validator using the Validators object which we need to import from @angular/forms and we have a couple of built in validators we can use for example the .required method.
+> We need to make sure we do not add any parenthesis after the method because we do not want to execute the method as it is a static method made available by Validators. Instead we only want to pass the reference to this method. Angular will execute the method whenever it detects the input of this form control changes. Therefore, it only needs a reference on what it should execute at this point in time.
+
+   app.component.ts:
+      import { FormGroup, FormControl, Validators } from '@angular/forms';
+      export class AppComponent implements OnInit {
+         ngOnInit() {
+            this.signupForm = new FormGroup({
+               'username': new FormControl(null, Validators.required),
+               'email': new FormControl(null, [Validators.required, Validators.email]),
+            });
+         }
+      }
+
+> This is how we setup validation for our form controls using the reactive approach.
+
+> We access the controls differently. We do this by passing in our overall form and then calling the .get method which allows us to get access to our controls. As the argument we can either specify the control name or the path to the control.
+
+   app.component.html:
+      <span class="help-block" *ngIf="!signupForm.get('username').valid && signupForm.get('username').touched">
+         Please enter a valid username!
+      </span>
+
+> We can access the different control properties for the selected control so in the above example we are looking at the valid property to see if this is not valid and the input is touched in order to display the error message.
+
+> The get also takes a path to an element. We may specify a path because we may have a nested forms.
+> We can have FormGroups nested inside of FormGroups for example if we have a userData property which groups inputs the TypeScript code would look something like the below:
+
+   app.component.ts:
+      import { FormGroup, FormControl, Validators } from '@angular/forms';
+      export class AppComponent implements OnInit {
+         signupForm: FormGroup;
+
+         ngOnInit() {
+            this.signupForm = new FormGroup({
+               'userData': new FormGroup({
+                  'username': new FormControl(null, Validators.required),
+                  'email': new FormControl(null, [Validators.required, Validators.email])
+               }),
+               'gender': new FormControl('male')
+            });
+         }
+      }
+
+> We now have a nested form. We would therefore need to reflect this in our HTML template because our code will break. This is because on the overall FormGroup there is no FormControl of username and email as it is now nested in the userData FormGroup.
+> We would need to update our HTML and Form synchronisation. We do this by wrapping our form controls in another element such as a <div> to replicate the structure we have in the TypeScript object. On this <div> we place the formGroupName directive and pass in the FormGroup name as the argument.
+
+   app.component.html:
+      <div formGroupName=""userData">
+         <div>
+            <label for="username">Username</label>
+            <input type="text" id="username" formControlName="username">
+            <span class="help-block" *ngIf="!signupForm.get('userData.username').valid && signupForm.get('userData.username').touched">Please enter a valid username!</span>
+         </div>
+         <div>
+            <label for="email">email</label>
+            <input type="text" id="email" formControlName="email">
+            <span class="help-block" *ngIf="!signupForm.get('userData.email').valid && signupForm.get('userData.email').touched">Please enter a valid email!</span>
+         </div>
+      </div>
+
+> We can kind of see the schema here, the formControlName to tell Angular which property in our TypeScript object representing the form relates which HTML input and the FormGroupName to tell Angular the same for a form group.
+> With this tiny addition the form is almost working again, but we now need to update the .get method path for the property to the nested path. In the above example this would be userData. followed by the property within the userData such as userData.username or userData.email.
+> We structure our paths separated with the period (.) and so if we have a new object we just add the period inbetween.
