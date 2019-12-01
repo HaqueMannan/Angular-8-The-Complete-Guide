@@ -1,0 +1,131 @@
+> Typically we may need to reach out to a webserver/API whereby we now have a asynchronous operation because the response is not coming back instantly.
+> Angular allows us to create an asynchronous validators which are able to wait for a response before returning the validator.
+> Below is an example simulation of an asynchronous validator:
+
+   app.component.ts:
+      import { FormGroup, FormControl, Validators, FormArray } from '@angular/forms';
+      import { Observable } from 'rxjs/Observable';
+      export class AppComponent implements OnInit {
+         signupForm: FormGroup;
+
+         ngOnInit() {
+            this.signupForm = new FormGroup({
+               'email': new FormControl(null, [Validators.required, Validators.email], this.forbiddenEmail)
+            });
+         }
+
+         forbiddenEmail(control: FormControl): Promise<any> | Observable<any> {
+            const promise = new Promise<any>((resolve, reject) => {
+               setTimeout(() => {
+                  if (control.value === 'test@email.com') {
+                     resolve({'emailIsForbidden': true});
+                  } else {
+                     resolve(null);
+                  }
+               }, 1500);
+            });
+            return promise;
+         }
+      }
+
+> The asynchronous validator also takes a control as an argument which is of the type of FormControl and we also need to return something but will not be an object with an error code and a boolean. Instead, this will return a Promise or an Observable which wraps anything.
+> Promise and Observable are two constructs which handle asynchronous data which is what this validator is about.
+> In the function body we create a variable of a new Promise. As with any Promise constructor this receives a function with resolve and reject as arguments we can execute in the function. In that function we can use setTimeout to simulate an asynchronous task.
+> When the asynchronous function fails validation we need to return an key:value pair object with this error code as we did for the synchronous validator.
+> In a promise we do not return but we resolve.
+> If the validation passes we resolve the error object else we resolve the null. We then return the promise variable (or whatever we name the promise).
+> To add the validator, we add this to the control as the third argument which stores either a single asynchronous validator or an array of asynchronous validators. We add this as a reference.
+> If we used the this keyword in our asynchronous function, we would need to bind the this keyword to prevent any errors when making a reference to the function in the FormControl asynchronous validator argument. However, in the above example we did not use the this keyword in the function and therefore do not need to bind the this keyword when Angular calls on the validator.
+> Now with this code in place, we will notice the ng-invalid will change to ng-pending and then back to either ng-invalid or ng-valid after the asynchronous function resolves. This is because Angular is evaluating the input using our asynchronous function.
+> This is how we can add asynchronous validators to our form controls in the reactive approach.
+
+> There is a form state we can track in general. On our FormGroup property and on each control (using the .get method) of our form we have two Observables we can listen to. These are statusChanges and valueChanges.
+
+   app.component.ts:
+      import { FormGroup, FormControl, Validators, FormArray } from '@angular/forms';
+      export class AppComponent implements OnInit {
+         signupForm: FormGroup;
+
+         ngOnInit() {
+            this.signupForm = new FormGroup({ ... });
+            this.signupForm.valueChanges.subscribe(
+               (value) => console.log(value)
+            );
+            this.signupForm.statusChanges.subscribe(
+               (status) => console.log(status)
+            );
+         }
+      }
+
+> With every keystroke the value of the form object is printed to the console. The valueChanges is fired every time we change something about the form in any input. Note we can call this on an individual control using the .signupForm.get('') method passing in the control we want to observe.
+> With status change we would see the status of the form printed to the console i.e. INVALID or VALID. If we have an asynchronous validator we would also see the PENDING status before it resolves.
+> These are two nice Observables we can listen/subscribe to if we really want to closely watch what happens in our forms or on an individual control and want to react to it.
+
+> Not only can we listen to the updates in our form, we can also update the form on our own just like in the template driven approach. We have setValue and patchValue methods.
+
+   app.component.ts:
+      import { FormGroup, FormControl, Validators, FormArray } from '@angular/forms';
+      export class AppComponent implements OnInit {
+         signupForm: FormGroup;
+
+         ngOnInit() {
+            this.signupForm = new FormGroup({ ... });
+            this.signupForm.setValue({
+               'userData': {
+                  'username': 'Alex',
+                  'email': 'alex@email.com'
+               },
+               'gender': 'male',
+               'hobbies': []
+            });
+         }
+      }
+
+> The setValue takes in an object which resembles our form when we create it in ngOnInit. The above will pre-populate our form with the values set in setValue as we immediately call setValue OnInit of the component.
+> We also have patchValue if we only want to update part of the form.
+
+   app.component.ts:
+      import { FormGroup, FormControl, Validators, FormArray } from '@angular/forms';
+      export class AppComponent implements OnInit {
+         signupForm: FormGroup;
+
+         ngOnInit() {
+            this.signupForm = new FormGroup({ ... });
+            this.signupForm.patchValue({
+               'userData': {
+                  'username': 'Beth',
+               }
+            });
+         }
+      }
+
+> We can also reset the form using the .reset method.
+
+   app.component.ts:
+      import { FormGroup, FormControl, Validators, FormArray } from '@angular/forms';
+      export class AppComponent implements OnInit {
+         signupForm: FormGroup;
+
+         onSubmit() {
+            this.signupForm.reset();
+         }
+      }
+
+> If we do not want to reset the radio button, we can pass in an object to the .reset method to reset specific values.
+
+   app.component.ts:
+      import { FormGroup, FormControl, Validators, FormArray } from '@angular/forms';
+      export class AppComponent implements OnInit {
+         signupForm: FormGroup;
+
+         onSubmit() {
+            this.signupForm.reset({
+               'userData': { 'username': 'Anna' }
+               'gender': 'female'
+            });
+         }
+      }
+
+> The above will reset the form and will set the username input field to Anna and the gender input field to female.
+> We will notice after clicking the submit button, in the console the FormGroup object will display null for the values (i.e. for the username and email values). This is because all objects are not evaluated until we unfold them. If we want to check the whole form value we would have to remove the reset temporarily. Alternatively, we can always log single properties and we will get the values they had at logging time. 
+> We now have all the tools to build a reactive form in Angular to fit our needs.
