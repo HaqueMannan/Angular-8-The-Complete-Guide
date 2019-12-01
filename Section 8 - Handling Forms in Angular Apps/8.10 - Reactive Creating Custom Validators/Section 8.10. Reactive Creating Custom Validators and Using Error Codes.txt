@@ -1,0 +1,49 @@
+> With the reactive approach we can build our own validators. With most of the built in validators we should be able to cover most of the use cases, however, we also have the flexibility to build our own.
+> Below is an example of creating such custom validator:
+
+   app.component.ts:
+      import { FormGroup, FormControl, Validators, FormArray } from '@angular/forms';
+      export class AppComponent implements OnInit {
+         signupForm: FormGroup;
+         forbiddenUsernames = ['Alex', 'Beth', 'Chris', 'Daisy'];
+
+         ngOnInit() {
+            this.signupForm = new FormGroup({
+               'username': new FormControl(null, [Validators.required, this.forbiddenNames.bind(this)])
+            }
+         }
+
+         forbiddenNames(control: FormControl): { [s: string]: boolean } {
+            if (this.forbiddenUsernames.indexOf(control.value) !== -1) {
+               return { 'nameIsForbidden': true };
+            }
+            return null;
+         }
+      }
+
+> A validator in the end is just a function which gets executed by Angular automatically when it checks the validity of the form control. It checks the validity whenever we change the control.
+> A validator to work correctly needs to receive an argument which is the control it should check. We give the control the type of FormControl.
+> A validator also needs to return something for Angular to handle the return value correctly. This should be a JavaScript object. This object can have any key which should be interpreted as a string. We use Typescript syntax to state that we want a key:value pair where the key can be interpreted as a string. The value should be a boolean.
+> The function should return in the end something like {nameIsForbidden: true} which is determined by us. We can add the logic in the body of the function.
+> In the above example we check if the value is part of the forbiddenUsernames array. If it does exist we return an object else we return null.
+> If validation is successful we have to either return null or omit the return statement i.e. return nothing and we should not pass a object with its boolean value of false. This may sound counter intuitive but it is just how this works. This is how we tell Angular that the form control is valid.
+> This is all that is required to create our own form validator.
+> To add the validator, we simply go to the control we want to assign an array of validators and add a reference to our validator function to execute.
+> We would run into an error due to the .this keyword because Angular would call on the class when it checks the validity. At this point in time the this keyword would not refer to our class and so to fix this we need to bind the this keyword using the old JavaScript trick to make sure that the this keyword in our function refers to what we want it to refer to.
+> The indexOf method will check if the control.value is part of the array and will return -1 if it is not part of the array. The -1 is interpreted as true though. We therefore need to check if this is not equal to -1 which will indicate we did find it in the array and is invalid.
+> We now have our own custom validation for our controls.
+
+> In the NgForm object we have an errors object property on our form. If we open this in the JavaScript console we would see a value of null. However, if we look at the controls object property and look at the username control, if we look at the error property we would see our nameIsForbidden: true key:value pair we setup above. (This will be true if we entered a forbidden username).
+> This is where Angular actually adds the error codes on the individual errors object. We can therefore take advantage of this by going to our HTML template and fine tuning the error message:
+
+   app.component.html:
+      <span class="form-text" *ngIf="!signupForm.get('userData.username').valid && signupForm.get('userData.username').touched">
+         <span *ngIf="signupForm.get('userData.username').errors['nameIsForbidden']">
+            This name is invalid!
+         </span>
+         <span *ngIf="signupForm.get('userData.username').errors['required']">
+            This field is required!
+         </span>
+      </span>
+
+> We can now have custom error messages displayed based on this FormControl's error object value.
