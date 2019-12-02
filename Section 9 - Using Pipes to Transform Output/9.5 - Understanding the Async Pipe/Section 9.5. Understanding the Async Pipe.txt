@@ -1,0 +1,28 @@
+> Below is an example of a simulated asynchronous code:
+
+   app.component.ts:
+      ...
+      export class AppComponent {
+         appStatus = new Promise((resolve, reject) => {
+            setTimeout(() => {
+               resolve('stable');
+            }, 2000);
+         });
+         ...
+      }
+
+   app.component.html:
+      <h2>App Status: {{ appStatus }}</h2>
+
+> This will display on our screen App Status: [object Object] which is correct because it is a Promise which is an object. However, after two seconds we know that this is no longer an object because it will resolve into a string.
+> Angular does not know this because it does not watch our object and it does not see if this object has actually transformed to something else or if it returns us value. It simply knows that it is a promise and Angular is done. This is beneficial as it saves us performance.
+> There is a nice pipe we can use in this case scenario to make the transformed mention of this data easier.
+> We know that this will resolve to a string after two seconds and we would want to output this data.
+> We can use the AsyncPipe which is a built in pipe.
+
+   app.component.html:
+      <h2>App Status: {{ appStatus | async }}</h2>
+
+> The above will now display App Status: and then after the asynchronous function resolves and returns the data, it would then display App Status: stable.
+> The async recognises that this is a promise (this would also work with Observables) and after two seconds it would simply recognise that something has changed i.e. the promise resolved (or data sent through the subscription for Observables) and it would print this data to the screen.
+> We should now be conformable using pipes and creating our own custom pipes and working with asynchronous data with pipes.
