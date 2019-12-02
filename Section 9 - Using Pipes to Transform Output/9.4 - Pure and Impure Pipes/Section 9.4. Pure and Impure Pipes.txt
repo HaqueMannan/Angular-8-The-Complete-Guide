@@ -1,0 +1,60 @@
+> Below is an example of a Filter pipe which allows us to filter on a data. However, there is one minor issue with it.
+
+   app.component.ts:
+      <input type="text" [(ngModel)]="filteredStatus">
+      <button class="btn btn-primary" (click)="onAddServer()">Add Server</button>
+      <ul class="list-group">
+         <li *ngFor="let server of servers | filter: filteredStatus: 'status'">
+      <ul>
+   
+   app.component.ts:
+      export class AppComponent {
+         servers = [...]
+            onAddServer() {
+               this.servers.push({
+                  instanceType: 'small',
+                  name: 'New Server',
+                  status: 'stable',
+                  started: new Date(15, 1, 2017)
+               });
+            }
+      }
+   
+   filter.pipe.ts:
+      import { Pipe, PipeTransform } from '@angular/core';
+      @Pipe({
+         name: 'filter'
+      })
+      export class FilterPipe implements PipeTransform {
+         transform(value: any, filterString: string, propName: string): any {
+            if (value.length === 0 || filterString === '') {
+               return value;
+            }
+            const resultArray = [];
+            for (const item of value) {
+               if (item[propName] === filterString) {
+                  resultArray.push(item);
+               }
+            }
+            return resultArray;
+         }
+      }
+
+> We will notice that if we allow the user to add a new server using the button while the list is filtered on the status of stable, the new servers are not added while the list is filtered. The new servers exist and if we were to remove the filter we would be able to see them and if we re-add the filter they would then appear in the filtered list.
+> This is not a bug. The reason for this behaviour is because Angular is not rerunning our pipe on the data whenever the data changes.
+> Changing the input of the pipe will trigger a recalculation.
+> Updating Arrays or Objects does not trigger a recalculation.
+> This is a good behaviour because otherwise Angular would have to rerun the pipe whenever any data on the page changes. This would be really bad because that would cost a lot of performance.
+> This is also the reason why no built in filter pipe exists because filtering has a high performance cost if we want to enforce it being updated even if we are in a filtered mode.
+> By default it does not work but we can force it to work, but we must be aware the following change will make sure that whenever we change data on the page our pipe is recalculated. This might lead to performance issues and we should know what we are doing which is really important.
+> To force the pipe to be updated whenever the data changes by adding a second property to the @Pipe decorator. This is the pure property which we can set to false (by default this is set to true and does not need to be added).
+
+   filter.pipe.ts:
+      import { Pipe, PipeTransform } from '@angular/core';
+      @Pipe({
+         name: 'filter',
+         pure: false
+      })
+
+> This will now recalculate the pipe whenever any data on the page changes and we should now see the new servers added to the list even whilst we are filtered.
+> This might lead to performance issues but it is fine to use which is why the pure property exists.
