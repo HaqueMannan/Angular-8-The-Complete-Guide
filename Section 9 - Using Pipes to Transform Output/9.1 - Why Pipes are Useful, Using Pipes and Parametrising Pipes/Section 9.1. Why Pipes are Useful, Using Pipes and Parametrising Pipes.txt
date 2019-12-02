@@ -1,0 +1,48 @@
+> Pipes are a feature built into Angular which allows us to transform output in our template.
+> The main purpose of a pipe is to transform some output.
+> There are pipes for different types of output as well as synchronous and asynchronous data.
+> The general theme is always the same, for example:
+
+   username = 'Anna'
+
+> The username is a property in our component and it holds a string of Anna. We want to output the username in our template and we would probably use string interpolation:
+
+   <p>{{ username }}</p>
+
+> We then decide it would be nice if the output of Anna would be all uppercase but only when we output it. Therefore, we do not want to change the property itself to uppercase, but we want to transform the way it is displayed once we render it to the screen.
+> In this example we could use a Pipe, namely the uppercase Pipe:
+
+   <p>{{ username | uppercase }}</p>
+
+> This would be a built-in pipe provided by Angular. With this pipe in use, we would now see ANNA in all uppercase being printed to the screen because this is what this uppercase pipe does i.e. it transforms the value.
+> This is the main purpose of pipes of transforming values.
+
+
+How to use a Pipe:
+> To use a Pipe we need to go to the template file (i.e. the .component.html file) because a pipe is only responsible for transforming the output and so the correct place to use it logically is in the template.
+
+   app.component.html:
+      <li>{{ server.instanceType | uppercase }}</li>
+      <li>{{ server.started | date }}</li>
+
+> We simply add the pipe symbol, hence the name, followed by the name of the pipe.
+> This will now transform the data using the pipe.
+> We will notice with the built in data pipe this will format the date 'MMM D, YYYY' (e.g Aug 8, 1920) which may not be the format we want to display our dates.
+
+Parametrising Pipes:
+> To configure a pipe we can add a parameter to the pipe to configure it. We can do this by adding a colon (:) followed by properties.
+> This applies to all pipes, we add a parameter to it using the colon to configure the pipe. However, the pipe must be able to handle a parameter in order to be configurable. Below is an example of configuring the date pipe:
+
+   app.component.html:
+      <li>{{ server.started | date:'fullDate' }}</li>
+
+> The date pipe takes in a configuration of a string parameter where we setup the date. The fullDate parameter will format the date to EEEE, MMMM D, YYYY (e.g Sunday, August 8, 1920).
+> If there are multiple parameters, we simply separate them with additional colons (:) followed by the parameter name.
+
+
+Where to learn more about Pipes:
+> We can learn more about the built pipes and pipes in general by heading over to the Angular documentation (Angular.io > DOCS > API): https://angular.io/api
+> We can type Pipe as a filter and view all of the pipes which are built into Angular such as:
+   DatePipe, UpperCasePipe, LowerCasePipe, CurrencyPipe, PercentPipe, etc.
+> If we click on one the pipe, we can see more details about the pipe and what parameter(s) if any it can take. For example the SlicePipe can take upto two parameters, one for the start and another for the end.
+> This will provide an explanation of the pipe and examples of how we can use them.
