@@ -1,0 +1,89 @@
+> To create our own pipe we simply create a new file in the app directory and giving it a extension of .pipe.ts as per the naming convention.
+> This newly created file should hold a class and should also contain a special method.
+> It is not absolutely necessary but the class should have a Type of PipeTransform which should be imported from @angular/core. We can now use the transform method.
+
+   shorten.pipe.ts:
+      import { Pipe, PipeTransform } from "@angular/core";
+
+      @Pipe({
+         name: 'shorten'
+      })
+      export class ShortenPipe implements PipeTransform {
+         transform(value: any) {
+            return value.substr(0, 10) + ' ...';
+         }
+      }
+
+> The transform needs to receive the value which is the type of any that this pipe class transforms. We would then receive a list of arguments.
+> In the above, it does not take in any arguments and so we can omit the second argument.
+> The transform always needs to return something because the pipe is just a tool which takes something in and returns something out.
+> In the above we use the JavaScript substr method where we can define how long the sub-string should be i.e. we only return the first 10 characters from the string.
+> We need to add the @Pipe decorator which is also imported from @angular/core. We can then choose a name for the pipe by adding the name property followed by a string value.
+> In order to use the pipe, we need to go to AppModule and add it to the declarations array.
+
+   app.module.ts:
+      import { NgModule } from '@angular/core';
+      import { ShortenPipe } from './shorten.pipe';
+      @NgModule({
+         declarations: [
+            AppComponent,
+            ShortenPipe
+         ], ...
+      })
+
+> Just like with components and directives we also need to add pipes to the declarations. We also need to import this file.
+> With the pipe added, we now have our own custom pipe available to use in our component.html files. We simply add the pipe as we have seen previously.
+
+   app.component.html:
+      <strong>{{ server.name | shorten }}</strong>
+
+> We now have a custom pipe which transforms (shortens) the property to the first 10 characters.
+> We can customise the body of the transform method to create our own complex property transformations.
+
+
+Parameterising Custom Pipe:
+> Now that we have our own custom pipe, we can add parameters as the second argument to our transform method.
+> Using the above pipe example we can add parameters which allows the developer to choose the number of characters to shorten the text, thus, making our custom pipe dynamic.
+
+   shorten.pipe.ts:
+      import { Pipe, PipeTransform } from "@angular/core";
+
+      @Pipe({
+         name: 'shorten'
+      })
+      export class ShortenPipe implements PipeTransform {
+         transform(value: any, limit: number) {
+            if (value.length > limit) {
+               return value.substr(0, limit) + ' ...';
+            }
+            return value;
+         }
+      }
+
+> We added a limit parameter which is of the type number and is added into the body of our JavaScript substr method.
+> With this little change we now allow the user to pass a parameter to the custom pipe.
+
+   app.component.html:
+      <strong>{{ server.name | shorten: 10 }}</strong>
+
+> If we do not pass in the parameter then this would fail the if logic and will return the original value, else if a parameter was passed, the if statement will check if the limit was reached in order to return a shortened text.
+> To add another parameter we simply add another argument to the transform method. To pass in the parameter in our template we use the colon to separate each argument parameter passed into the pipe.
+
+
+To conclude:
+> To create a Pipe and add parameters we need to:
+   a) add the @Pipe decorator
+   b) make sure we have the transform method (possibly enforced by adding PipeTransform interface - good practice)
+   c) the first argument must be the value of the data we are transforming with the Pipe which can be any data type. The subsequent arguments are the parameters for the pipe
+   c) the transform method always returns something
+   d) add the pipe to the declarations array in the app.module.ts file
+> We can now use our own pipes as well as chain our pipes with other pipes, transforming the data.
+
+Additional Notes:
+> We can use the cli command of ng generate pipe or ng g p followed by the name of the pipe to generate this file and add the pipe class to our declarations. We can use the --skipTests flag to not generate the .spec.ts test file.
+
+   ng g c filter --skipTests
+
+> We can add a pipe to a *ngFor loop because pipes transform our output and the *ngFor loop is simply part of our output and so we can add a pipe there too.
+
+   <li *ngFor="let server of servers | filter: filteredStatus: 'status'"> </li>
