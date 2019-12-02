@@ -1,0 +1,10 @@
+> We can combine pipes in Angular by chaining pipes together for example if we want to format the date with the DatePipe and make this uppercase using the UpperCasePipe.
+> To chain a pipe we simply add another pipe after the first pipe:
+
+   app.component.html:
+      <li>{{ server.started | date: 'EEEE d MMMM, y' | uppercase }}</li>
+
+> The order of the pipes might be important in some cases when transforming data.
+> Pipes will generally be parsed from left to right. So in the above case the DatePipe will get applied to the server.started property. The UpperCasePipe will then get applied to the result of the server.started DatePipe operation.
+> If we were to change the sequence around so that we use the UpperCasePipe first before the DatePipe, we would get an error. This is because the property is a date and not a string and there are certain elements which cannot be turned into uppercase.
+> This is why it is important to watch the order of the pipe transforming the property/data.
