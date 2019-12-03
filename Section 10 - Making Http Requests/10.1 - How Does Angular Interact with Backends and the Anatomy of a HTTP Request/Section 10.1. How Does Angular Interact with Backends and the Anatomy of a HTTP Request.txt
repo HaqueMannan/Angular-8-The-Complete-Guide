@@ -1,0 +1,21 @@
+> We do not connect Angular to a database directly. We do not enter our database credentials into our Angular app because this would be highly insecure because everyone can read our Angular code since it is a front end JavaScript client side application code.
+> We must not store credentials in our Angular code. For more information of JavaScript Security we can read the article: https://academind.com/learn/javascript/hide-javascript-code/
+> We send HTTP requests and we get HTTP responses to and from a server.
+> A server in the end is defined as a API (this could be a REST API or GraphQL API we are communicating with).
+> The REST API is the most common form of API and we will learn how to work with it.
+> An API in the end is almost like a normal website, but when we visit its URLs we are not getting back HTML but instead we are getting back data mostly in the JSON format.
+> If we want to learn more about REST API in general we can read the article: https://academind.com/learn/node-js/building-a-restful-api-with/
+> We do not use Angular for the creation of the API, we use a server side language such as Node.js, PHP, Python, etc.
+> We can communicate with the APIs with Angular. On the server we can have code that does interact/communicate with a database (whether it is a SQL or NoSQL database).
+> There are more reason to communicate with a server other than storing or fetching data for example File Uploads, Analytics, etc.
+
+
+The Anatomy of a HTTP Request:
+> It is important to understand the anatomy of a HTTP request. A HTTP request is made up of a couple of core parts.
+> The most important part of a HTTP request is the URL (API Endpoint) we are sending the request to. The exact path of the URL will depend on the API Endpoint we are interacting with.
+> When working with RESTful API it is not just about the URL but also about the HTTP Verb we are using such as GET, POST, PUT, DELETE, etc. This defines the type of request we want to send to the API Endpoint.
+> This will always depend on the API we are working with i.e. which endpoints and verbs for the endpoints are available and so the official documents for the API is always the place to go (unless we are writing our own API).
+> We often have to set additional metadata called Headers. These are optional and some default headers will be appended to a request for us by the Browser and Angular; however, we can append our own headers.
+> For some HTTP Verbs we can also add a Body to our request. The body is the core data that is attached to the request for example if we are sending a POST request to create a new post data on the server, we can attach that information of the piece of data to our request and we would do this on the request body.
+> The Body can be added to a POST, PUT and PATCH requests which are requests that alter data on the server by adding or replacing it.
+> This is the general anatomy of a HTTP request.
