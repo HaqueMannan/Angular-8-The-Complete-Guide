@@ -1,0 +1,159 @@
+> With larger applications our components code can grow in complexity. We can reduce the size of our component code by outsourcing the transforming of data into services which is a better practice.
+> Services are part of our Angular application that do the heavy lifting and our components are relatively lean as they can be and are mostly concerned with the template related work.
+> Below is an example of using services:
+
+   posts.service.ts:
+      import { Injectable } from "@angular/core";
+      import { HttpClient } from '@angular/common/http';
+
+      import { Post } from "./post.model";
+
+      @Injectable({ providedIn: 'root' })
+      export class PostsServices {
+         constructor(private http: HttpClient) {}
+
+         createAndStorePosts(title: string, content: string) {
+            const postData: Post = { title: title, content: content };
+            this.http.post<{ name: string }>(
+               'https://angular-http-234fa.firebaseio.com/posts.json',
+               postData
+            ).subscribe(responseData => {
+               console.log(responseData);
+            });
+         }
+      }
+
+   app.component.ts:
+      import { PostsServices } from './posts.service';
+      export class AppComponent implements OnInit {
+         ...
+         constructor(private http: HttpClient, private postsService: PostsServices) {}
+
+         onCreatePost(postData: Post) {
+            this.postsService.createAndStorePosts(postData.title, postData.content);
+         }
+      }
+
+> We can provide our service via two method, either with @Injectable which we need to import from @angular/core and add an object of providedIn: root which is the more modern approach or we could provide our service in the providers array in our app.module.ts file.
+> In this service we would want our HTTP request methods i.e. the methods which do the requests and we only want to get the responses or message whether we are done with the request. 
+> We can import our PostsServices and call on the methods within our service.
+> Our component.ts file is now more leaner and can continue to use the http request as it did before but the logic is now outsourced into the PostsServices.
+
+> We can do the same for our fetchPosts request method and outsource the logic into the PostsServices:
+
+   posts.service.ts:
+      import { map } from 'rxjs/operators';
+      import { Post } from "./post.model";
+      ...
+
+      @Injectable({ providedIn: 'root' })
+      export class PostsServices {
+         constructor(private http: HttpClient) {}
+         ...
+         fetchPosts() {
+            this.http.get<{ [key: string]: Post }>(
+               'https://angular-http-234fa.firebaseio.com/posts.json'
+            ).pipe(
+               map(responseData => {
+                  const postsArray: Post[] = [];
+                  for (const key in responseData) {
+                     if (responseData.hasOwnProperty(key)) {
+                        postsArray.push({ ...responseData[key], id: key });
+                     }
+                  }
+                  return postsArray;
+               })
+            ).subscribe(posts => {
+            });
+         }
+      }
+
+> We do not add the  this.isFetching = false and this.loadedPosts = posts into our service because this is not part of the service and are methods belonging to our component.
+
+   app.component.ts:
+      export class AppComponent implements OnInit {
+         loadedPosts: Post[] = [];
+         isFetching = false;
+
+         constructor(private http: HttpClient, private postsService: PostsServices) {}
+
+         ngOnInit() {
+            this.postsService.fetchPosts();
+         }
+      }
+
+> We now have our fetchPosts outsourced, however, if we now try to use this PostsService method in our component this will work, however, we will notice that we now have no posts available and this is because whilst we are running the code in the service which is executing a http request and fetching a response we have lost connection between the data we fetched in the service and our component.
+> To fix this we have two possible ways:
+   1) We use a Subject in the PostsServices and next() our posts data when we get them and we subscribe to that subject in the component.ts file. This pattern is best suited if we have multiple components interested in the posts.
+   2) The alternative is to return the results of our get method which would be our observable. Therefore, we do not want to subscribe in our Services as we only want to return the prepared observable. 
+
+   posts.service.ts:
+      import { map } from 'rxjs/operators';
+      import { Post } from "./post.model";
+      ...
+
+      @Injectable({ providedIn: 'root' })
+      export class PostsServices {
+         constructor(private http: HttpClient) {}
+         ...
+         fetchPosts() {
+            return this.http.get<{ [key: string]: Post }>(
+               'https://angular-http-234fa.firebaseio.com/posts.json'
+            ).pipe(
+               map(responseData => {
+                  const postsArray: Post[] = [];
+                  for (const key in responseData) {
+                     if (responseData.hasOwnProperty(key)) {
+                        postsArray.push({ ...responseData[key], id: key });
+                     }
+                  }
+                  return postsArray;
+               })
+            )
+         }
+      }
+
+   app.component.ts:
+      export class AppComponent implements OnInit {
+         loadedPosts: Post[] = [];
+         isFetching = false;
+
+         constructor(private http: HttpClient, private postsService: PostsServices) {}
+
+         ngOnInit() {
+            this.isFetching = true;
+            this.postsService.fetchPosts().subscribe(posts => {
+               this.isFetching = false;
+               this.loadedPosts = posts;
+            });
+         }
+
+> We can now subscribe in our component file and also call on our methods which set the isFetching and loadedPosts variables values as we had previously.
+> We have now moved the results handling into the component but the more heavy lifting logic (sending the request and transforming the data) lives in our service.
+> The second approach is the best practice when working with Angular and HTTP requests.
+> If our component does not care about the response then there is no reason to to subscribe inside the service, but if our component does care about the response status then we should have the service component split to return the data and have the component to subscribe to it.
+
+> Below is an example of using the DELETE method:
+
+   posts.service.ts:
+   @Injectable({ providedIn: 'root' })
+   export class PostsServices {
+      deletePosts() {
+         return this.http.delete('https://angular-http-234fa.firebaseio.com/posts.json')
+      }
+   }
+
+   app.component.ts:
+      export class AppComponent implements OnInit {
+         loadedPosts: Post[] = [];
+         onClearPosts() {
+            this.postsService.deletePosts().subscribe(() => {
+               loadedPosts = [];
+            });
+         }
+      }
+
+> This method takes in a URL. The URL and whether it even supports the DELETE method will depend on the API we are using. Firebase offers it.
+> This will clear the whole posts within our database.
+> We returned our observable so that we can be informed of the request in our component i.e. we can subscribe in our component.ts file of the DELETE request.
+> We may want to subscribe in our component because we may want to update the component variable. We do not care about the response of our request but we know that the subscribe function will get executed if the request succeeded and therefore we can set the loadedPosts to an empty array again to reset it.
