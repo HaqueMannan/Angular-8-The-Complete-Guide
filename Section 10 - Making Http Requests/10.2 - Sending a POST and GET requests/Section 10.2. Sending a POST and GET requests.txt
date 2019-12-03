@@ -1,0 +1,78 @@
+> In the app.module.ts file we need to unlock a new Module which is the HttpClient Module. We simply import HttpClientModule from @angular/common/http.
+
+   app.module.ts:
+      import { HttpClientModule } from '@angular/common/http';
+      @NgModule({
+         imports: [..., HttpClientModule]
+      })
+
+> This now unlocks the HttpClientModule that Angular offers in our whole project. With this in place we can now start sending requests in our components.
+> We need to inject our HttpClient which we need to import from @angular/common/http.
+
+   app.component.ts:
+      import { HttpClient } from '@angular/common/http';
+      export class AppComponent implements OnInit {
+         constructor(private http: HttpClient) {}
+      }
+
+> With this we can now start sending HTTP requests. Below is an example of a POST http request.
+
+   app.component.ts:
+      export class AppComponent implements OnInit {
+         constructor(private http: HttpClient) {}
+
+         onCreatePost(postData: { title: string; content: string }) {
+            this.http.post(
+               'https://angular-http-234fa.firebaseio.com/posts.json',
+               postData
+            ).subscribe(responseData => {
+               console.log(responseData);
+            });
+         }
+      }
+
+> Lets say on the onCreatePost method we receive a postData which we want to send to our HTTP server (we are using firebase).
+> We use the injected http service and here we have a couple of methos we can call. These methods are typically named like the HTTP Verbs for example we have GET, POST, DELETE, etc. This will allow us to send different kinds of requests.
+> Since we want to store data we can use the POST request. We call on the Post method and this takes in a couple of arguments. The first argument is the URL we want to send the request to (we can find the URL in our firebase project).
+> The URL we get from firebase will not be the entire URL. On custom or a different REST API we are communicating with, we would have clearly defined endpoints which the documents will document for us.
+> For firebase it is a little different. We have our URL as a starting point for the URL and then we can add our own segments after that which would get replicated as folders in the database. This would look like we are directly talking to the database but keep in mind that firebase only abstracts this away from us. We are still communicating with a REST API provided by firebase and they just translate our path to a folder structure in our database. We are not communicating directly to a database here.
+> If we want a folder named posts we simply add a segment in our URL for example /posts.json - it is important for firebase to add .json which is a firebase API requirement.
+> This will now allow us to send a POST request to that URL.
+> A POST request also needs a request body. Therefore, the post method takes in more than one argument (i.e. two required arguments), the first being the URL path and the second is the body. We therefore, send our postData as the body i.e. the data we want to store.
+> It is important to note that we normally send JSON data with a RESTful API. This will happen here as well but the Angular HttpClient will take our JavaScript object and automatically convert it to JSON data for us. Therefore, it will send JSON data but Angular will transform this automatically for us.
+> We now have everything to work for the POST method.
+> Angular heavily uses Observables and a HTTP request are also managed by observables because they are a perfect use case for observables. We can wrap them and then subscribe to them to get informed about the response and to handle errors and so on.
+> If we are not subscribing to the http request, then Angular and rxjs know that no one is interested in the response and therefore the request does not get sent. If no one is interested in the response then no request will be sent.
+> The post method gives us an observable that wraps our request. To get access to the response we need to have to call .subscribe here. This will provide us a responseData (we could have named this anything) and Angular HttpClient will do even more than just giving us the response, it will automatically extract the data attached to the response from the response body and give us that (though we also have ways to accessing the full response).
+> In the above we console.log the responseData.
+> With the subscription setup
+> We do not need to manage the subscription and unsubscribe because this is a observable provided by Angular and are handled behind the scenes once the request completes.
+> If we now test this in our application and go to the JavaScript console, we should see in JavaScript object for our Post but also in the network tab we can see two requests to the post endpoint (a characteristic of browsers which sends two post requests), the first one is the request method of OPTIONS to check if we have permission to send a Post request and the second is the request method of POST.
+> This is the general syntax of how we send a http requests and the core takeaway is that requests are only sent when we subscribe.
+> The get method allows us to fetch data. Below is an example code for fetching data using the GET http request.
+
+   app.component.ts:
+      export class AppComponent implements OnInit {
+         constructor(private http: HttpClient) {}
+
+         ngOnInit() {
+            this.fetchPosts();
+         }
+
+         onFetchPosts() {
+            this.fetchPosts();
+         }
+
+         private fetchPosts(postData: { title: string; content: string }) {
+            this.http.get(
+               'https://angular-http-234fa.firebaseio.com/posts.json'
+            ).subscribe(posts => {
+               console.log(posts);
+            });
+         }
+      }
+
+> The get method only takes in the URL for which we want to get the data from. We need to subscribe in order to make a request.
+> We placed the request in a private function which can now call in different places such as the onFetchPosts method as well as ngOnInit.
+> We get back a JavaScript object which has a key:value pair where the key is the uniqueID and the value is the object we stored in our POST request (a nested object).
+> If we want to store our data in an array, we would need to loop through the returned GET object and transform that data using observables operators.
