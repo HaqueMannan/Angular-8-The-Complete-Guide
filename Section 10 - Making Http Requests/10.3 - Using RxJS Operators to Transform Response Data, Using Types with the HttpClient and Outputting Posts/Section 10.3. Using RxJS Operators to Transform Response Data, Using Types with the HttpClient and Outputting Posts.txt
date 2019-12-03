@@ -1,0 +1,163 @@
+> We can transform data inside of the .subscribe method and would generally not be a problem.
+> It is good practice to use observable operators because it simply allows us to write cleaner code with different steps to funnel our data through that can easily be swapped or adjusted. This will give us a lean subscribe function and have other steps that focuses on other parts.
+> Before we subscribe we can call pipe and as we have learned that the pipe method to funnel our observable data through multiple operators before it reaches our subscribe method. Below is an example:
+
+   app.component.ts:
+      import { map } from 'rxjs/operators';
+      export class AppComponent implements OnInit {
+         constructor(private http: HttpClient) {}
+         private fetchPosts() {
+            this.http.get(
+               'https://angular-http-234fa.firebaseio.com/posts.json'
+            ).pipe(
+               map((responseData) => {
+                  const postsArray = [];
+                  for (const key in responseData) {
+                     if (responseData.hasOwnProperty(key)) {
+                        postsArray.push({ ...responseData[key], id: key });
+                     }
+                  }
+                  return postsArray;
+               })
+            ).subscribe(posts => {
+               console.log(posts);
+            });
+         }
+      }
+
+> We import the Map operators from rxjs/operators. This operator allows us to get some data and return new data which is then automatically re-wrapped into an observable so that we can still subscribe to it.
+> We have to manually loop through all the keys and create a new array. Hence, we create a newPosts constant array variable which is initially empty and will be used to store the new values using the for in loop.
+> We loop through each key in our responseData and then instead of pushing the data as is, we use the spread operator (...) to pull out all the key:value pairs of the nested object we are accessing. This will allow us to add one new key:value pair to that object which is the id field which will store the key i.e. the uniqueId created by firebase.
+> It is good practice to have an if statement in side of a for in loop to check if the responseData has its own property of the key so that we are not trying to access the property of some prototype.
+> We can now use that id for other http operations such as deleting and updating existing data.
+> Finally, we need to return the postsArray from our map operator which will then be forwarded to our subscribe method.
+> We now have an array returned which will have an element which has a id, title and content for the post.
+> This is how we use observable operators to transform our data.
+
+> Before we output our results, we need to draw our attention to a small area where we can improve our code.
+> If we hover over the post variable in our subscribe within our IDE, the posts returned is the type of any. This means that TypeScript is not able to detect how our posts format looks like. The postsArray is also the type of any.
+> The object we push is totally unknown to TypeScript because it does not know the format of our responseData. It only knows that it is an object but not how the object looks like.
+> We can tell TypeScript how the data/object looks like.
+> One way is to assign a type on the responseData we are getting in our map:
+
+   map((responseData: {[key: string]}) => {
+
+> We use a placeholder syntax for the id using a square brackets ([]) because the id is a generated string value which we do not know. This syntax would mean any string key we have on the object but we do not know the exact property name.
+> The data after would be our posts object. To make things simpler we can create a model.ts file to export an interface.
+
+   post.model.ts:
+      export interface Post {
+         title: string;
+         content: string;
+         id?: string
+      }
+
+> We have an optional id property which we indicate using the question mark (?) and is of the type string.
+> We can then use this model in our component file.
+
+   app.component.ts:
+      import { Post } from './post.model';
+      export class AppComponent implements OnInit {
+         ...
+         onCreatePost(postData: Post) { ... }
+         private fetchPosts() {
+            this.http.get(
+               'https://angular-http-234fa.firebaseio.com/posts.json'
+            ).pipe(
+               map((responseData: { [key: string]: Post }) => {
+                  const postsArray: Post[] = [];
+                  ...
+            })
+      }
+
+> With this in place, TypeScript now knows what is inside of responseData and we can now also set the type for our postsArray which will be the type of our Post array using the assignment which is the type followed by square brackets. This will indicate it will be an array of these types.
+> This is now an improved code because we can clearly understand what is inside of our postsArray and we would now have autocompletion in our IDE for example if we type post[0]. we should have autocompletion for the properties of id?, title and component because we know it has this format.
+> However, with the Angular HttpClient, there is a more element way of assigning a type. The get method is a generic method and so we can add angled brackets (<>) and between this we store the type which the response would actually return as a body once it is done:
+
+   app.component.ts:
+      import { Post } from './post.model';
+      export class AppComponent implements OnInit {
+         private fetchPosts() {
+            this.http.get<{ [key: string]: Post }>(
+               'https://angular-http-234fa.firebaseio.com/posts.json'
+            ).pipe(
+               map(responseData => {
+                  const postsArray: Post[] = [];
+                  ...
+            })
+      }
+
+> This will automatically be handled by the Angular HttpClient and TypeScript will understand this and will know that the responseData will have this type format.
+> The angle brackets is available on all request to add this extra piece of information which is totally optional but recommended and helpful about the data we are getting back from the requests e.g:
+
+   app.component.ts:
+      export class AppComponent implements OnInit {
+         onCreatePost(postData: Post) {
+            this.http.post<{ name: string }>() {...}
+         }
+      }
+
+> This will allow for better autocompletion and avoid any unnecessary TypeScript errors.
+
+> To output the data that we have fetched instead of logging it to the console, we can use a variable in our component and set its value to the fetched data in our get request's subscribe method.
+
+   app.component.ts:
+      export class AppComponent implements OnInit {
+         loadedPosts: Post[] = [];
+
+         private fetchPosts() {
+            this.http.get<{ [key: string]: Post }>( ...
+            ).pipe( ...
+            ).subscribe(posts => {
+               this.loadedPosts = posts;
+            });
+         }
+      }
+
+> We then need to use loadedPosts in our template.
+
+   app.component.html:
+      <p *ngIf="loadedPosts.length < 1">No posts available!</p>
+      <ul class="list-group" *ngIf="loadedPosts.length >= 1">
+         <li class="list-group-item" *ngFor="let post of loadedPosts">
+            <h1>{{ post.title }}</h1>
+            <p>{{ post.content }}</p>
+         </li>
+      </ul>
+
+> We can use the *ngIf directory to check if there are posts items and if there are we can loop through the array using *ngFor to display to display each post.
+> This demonstrate on how we make the step from loading the data to outputting it in our component template.
+> We can show a loading indicator to display whether a request is on its way for a better user interface.
+> We can easily implement this by having a new property which we set its value to initially false.
+
+   app.component.ts:
+      export class AppComponent implements OnInit {
+         loadedPosts: Post[] = [];
+         isFetching = false;
+
+         private fetchPosts() {
+            this.isFetching = true;
+            this.http.get<{ [key: string]: Post }>( ...
+            ).pipe( ...
+            ).subscribe(posts => {
+               this.isFetching = false;
+               this.loadedPosts = posts;
+            });
+         }
+      }
+
+> We can use this property and set it to true whenever we start fetching posts and then when we are done with the resquest, within the subscribe method we can set this property to false.
+> we can then use the template file with the *ngIf to display a loading indicator based on this value.
+
+   app.component.html:
+      <p *ngIf="loadedPosts.length < 1 && !isFetching">No posts available!</p>
+      <ul class="list-group" *ngIf="loadedPosts.length >= 1 && !isFetching">
+         <li class="list-group-item" *ngFor="let post of loadedPosts">
+            <h3>{{ post.title }}</h3>
+            <p>{{ post.content }}</p>
+         </li>
+      </ul>
+      <p *ngIf="isFetching">Loading...</p>
+
+> The logic to check for not isFetching will prevent the elements displaying prematurely before the fetch operations has completed.
+> We could use a CSS style to display a nice loading animation or simply print a loading text as we did above.
