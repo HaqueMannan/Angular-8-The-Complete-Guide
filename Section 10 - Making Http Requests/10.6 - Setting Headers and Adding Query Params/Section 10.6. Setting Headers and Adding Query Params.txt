@@ -1,0 +1,53 @@
+> We are now going to dive into the more advanced features of the Angular HttpClient and how we can configure our requests and the different responses we get back and so on.
+> When sending a HTTP request we setup the URL we send the request to and in some requests we also set the data we want to attach to our request.
+> Sometime we also need to set some special headers for example when we have a backend that requires authorisation and looks for an authorisation header or if we want to set our own content type or if we need to attach a custom header because our API we are sending a request to needs it.
+> Setting our own headers is extremely simple. Any HTTP methods has an extra last argument which is an object that we can configure that request.
+
+   post.service.ts:
+      import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+      @Injectable({ providedIn: 'root' })
+      export class PostsServices {
+      fetchPosts() {
+         return this.http.get<{ [key: string]: Post }>(
+            'https://angular-http-234fa.firebaseio.com/posts.json',
+            {
+               headers: new HttpHeaders({ 'Custom-Header': 'Hello' }),
+               params: new HttpParams().set('print', 'pretty')
+            }
+         )...
+      }
+
+> We can configure a whole bunch of options, headers being one of them.
+> The header option takes an HttpHeaders object which allows us to set the headers we want to send. We need to import HttpHeaders from @angular/common/http.
+> This allows us to create a new instance of the HttpHeaders object. We can then pass in a JavaScript object with the object literal notation where we can have key:value pairs of our headers.
+> If we now fetch some posts and look at the JavaScript console network tab, if we inspect our request Headers we would see on the request header the Custom-Header: Hello which is the custom header we attached to the request.
+> It is as simple as the above. We can add as many headers as we want by setting the headers config to a new HttpHeaders object to which we pass our headers in a object literal with a key:value notation.
+
+> We can also set query parameters and again it will depend on the API endpoint we are sending the request to as to which query parameters are supported.
+> We set query parameters by setting the params key in the same config object where we added headers. We set params to a new HttpParams which we need to import from @angular/common/http.
+> HttpParams works a little differently to HttpHeaders. We can call the set method where we can set the param name and a value for the parameter.
+> The print: pretty query parameter is provided by the firebase REST API. The allows firebase to change the format in which firebase returns its data.
+> If we send a fetch request and look at the request in the JavaScript console network tab, within the headers tab Request URL we also see the query parameter added to the end of the URL after the question mark (?) as we have seen with web URLs.
+> We could have added this directly to the URL ourselves, but by using the params config it is more convenient because we do not need to concatenate very long strings as we simply set them here with the set method.
+> To add multiple parameters we simply create a variable and create a new HttpParams object there and then set the variable calling on .append passing in the key:value pairs to append to the variable.
+
+   post.service.ts:
+      import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+      @Injectable({ providedIn: 'root' })
+      export class PostsServices {
+      fetchPosts() {
+         let searchParams = new HttpParams()
+         searchParams = searchParams.append('print', 'pretty');
+         searchParams = searchParams.append('custom', 'key');
+
+         return this.http.get<{ [key: string]: Post }>(
+            'https://angular-http-234fa.firebaseio.com/posts.json',
+            {
+               params: searchParams
+            }
+         )...
+      }
+
+> The append will return a new HttpParams object and we store that new object which has the new key:value pairs added to it in the variable overriding the old one. We simply repeat this if we have multiple key:value query parameters. The old parameters will be kept but the new one will be added to a new HttpParams object which will then replace the old one by storing it in the same variable.
+> Note: the custom:key is not supported by firebase and is used to demonstrate multiple query parameters and will not cause any errors when making the request.
+> We can now see multiple search parameters in the URL, each query parameter separated by the and sign (&) as we would see in a URL with multiple query parameters. Again something we could do directly in the URL by ourselves but by using the HttpParams configuration object it makes it more convenient.
