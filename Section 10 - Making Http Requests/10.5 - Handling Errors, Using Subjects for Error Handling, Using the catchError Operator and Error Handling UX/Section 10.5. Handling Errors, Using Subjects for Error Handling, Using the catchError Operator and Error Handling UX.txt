@@ -1,0 +1,98 @@
+> When interacting with servers things can go wrong such as there is no internet connection, sending a request with incorrect data or the server fails, etc.
+> We can simulate this by going into firebase edit the rule so that read and write are now set to false, our http requests should now fail. If we try to fetch posts we would now get an error in the console regardless if we were authenticated or not as we have locked read access to the database.
+> It is important how we react to the errors. In our example code, we would stay in the loading state which is not a good user experience because we as the user have no idea that there was an error. Therefore, proper error handling matters.
+> There are different ways of handling errors.
+
+1) We can pass more than one argument to our subscribe observable. The second argument is a function that triggers whenever there is an error is thrown.
+
+   app.component.ts:
+      export class AppComponent implements OnInit {
+         error = null;
+         onFetchPosts() {
+            // Send Http request
+            this.isFetching = true;
+            this.postsService.fetchPosts().subscribe(posts => {
+               this.isFetching = false;
+               this.loadedPosts = posts
+            }, error => {
+               this.isFetching = false;
+               this.error = error.message;
+            });
+         }
+      }
+   
+   app.component.html:
+      <p *ngIf="isFetching && !error">Loading...</p>
+      <div class="alert alert-danger" *ngIf="error">
+         <h1>An Error Occurred!</h1>
+         <p>{{ error }}</p>
+      </div>
+
+> We can create a variable which will store the error which we can display if an error is present in our template file.
+> We can set the error message to equal the error.message from the error return from our observable.
+> We could always dive deeper into the error object by logging it to the console and checking what properties it has and this would also depend on the API we are using and how it has been setup as not all APIs are the same. The firebase API for example has an errors.errors property within the errors object which provides a more detailed error response we could use. We can get information such as the headers, status code, etc. and really customise our error handling.
+
+2) The alternative of handling errors is to use a subject. This approach would be typically used where we have our subscribe in our service file and not in the component. This would be useful where we have multiple places in the application that would be interested in the error.
+
+   posts.service.ts:
+      import { Subject } from "rxjs";
+      @Injectable({ providedIn: 'root' })
+         export class PostsServices {
+            error = new Subject<String>();
+
+         createAndStorePosts(title: string, content: string) { ...
+            ).subscribe(responseData => {
+               console.log(responseData);
+            }, error => {
+               this.error.next(error.message);
+            });
+         }
+      }
+
+   app.component.ts:
+      import { Component, OnInit, OnDestroy } from '@angular/core';
+      import { Subscription } from 'rxjs/Subscription';
+      export class AppComponent implements OnInit, OnDestroy {
+         error = null;
+         private errorSub: Subscription;
+
+         ngOnInit() {
+            this.errorSub = this.postsService.error.subscribe(errorMessage => {
+               this.error = errorMessage;
+            });
+         }
+
+         ngOnDestroy() {
+            this.errorSub.unsubscribe();
+         }
+      }
+
+> We need to import Subject from rxjs and then set a new property to a subscribe which will cast a data type.
+> The idea then simply is to to use the subject in our subscribe method where we get the error to pass on our error message.
+> The remaining step is that we then subscribe to that subject in all the places we are interested in the error message.
+> It is always good practice to unsubscribe if we get rid of this component to prevent any memory leaks.
+> This is a subject based strategy to forwarding the error from our Service to our Component.
+
+> No matter how we handle our error, what can be useful is a special operator that can assist with handling errors.
+> The catchError operator needs to be imported from rxjs/operators.
+
+   posts.service.ts:
+      import { Subject, throwError } from "rxjs";
+      import { map, catchError } from 'rxjs/operators';
+      @Injectable({ providedIn: 'root' })
+      export class PostsServices {
+         fetchPosts() {
+            return this.http.get<{ [key: string]: Post }>(...).pipe(
+               map(...),
+               catchError(errorRes => {
+                  //Send to some analytics server
+                  return throwError(errorRes);
+               })
+            )
+      }
+
+> We could use this to perform some behind the scenes stuff we want to do when an error occurs such as logging it to somewhere or sending it to an analytics server etc.
+> Once we are done with handling the error we should pass it on and it definitely needs to reach the subscribe.
+> We need to create a new observable that wraps around the error and we import throwError from rxjs.
+> This is a function which will yield a new observable and it does so by wrapping an error. We need to return this error.
+> The above does nothing useful but it is an idea that we could consider using catchError if we have some generic error handling tasks we also want to execute.
