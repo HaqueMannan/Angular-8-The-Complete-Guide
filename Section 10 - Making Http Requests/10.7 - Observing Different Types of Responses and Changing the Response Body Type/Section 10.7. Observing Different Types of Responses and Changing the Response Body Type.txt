@@ -1,0 +1,76 @@
+> Sometimes we need access to the whole response object and not just to the extracted body data. Sometimes we need to know what status code was attached or what response headers. In such cases we can change the way the Angular HttpClient parses the response.
+> To do this we add an extra argument to configure the request as we did for headers and params, but here we would change the observe option:
+
+   posts.service.ts:
+      @Injectable({ providedIn: 'root' })
+      export class PostsServices {
+         createAndStorePosts(title: string, content: string) {
+            const postData: Post = { title: title, content: content };
+            this.http.post<{ name: string }>(
+               'https://angular-http-234fa.firebaseio.com/posts.json',
+               postData,
+               {
+                  observe: 'response'
+               }
+            ).subscribe(responseData => {
+               console.log(responseData.body);
+            })...
+         }
+      }
+
+> Observe takes in a couple of values. The 'body' is the default which is the extracted response body and converted to a JavaScript object.
+> We can change 'body' to 'response' and response will now return back the full HTTP response object and we could see this when we post a new data provided we console.log the response data.
+> If we want to access the response body we would now have to use .body on the response data.
+> We now also have access to the headers of the response, status code, statusText, etc.
+> Not only can we observe the body and response we can also observe events.
+
+   posts.service.ts:
+      @Injectable({ providedIn: 'root' })
+      export class PostsServices {
+         deletePosts() {
+            return this.http.delete(
+               'https://angular-http-234fa.firebaseio.com/posts.json',
+               {
+                  observe: 'events'
+               }
+            ).pipe(tap(event => {
+               console.log(event);
+               if (event.type === HttpEventType.Response) {
+                  console.log(event.body);
+               }
+            }));
+         }
+      }
+
+> We can use the tap operator which we need to import from rxjs/operators to help view events. The tap operator allows us to execute some code without altering the response.
+> We do not need to return anything with the tap operator because the tap operator will not interrupt the normal observable data flow as it only taps into it to allow us to do something but automatically allows the response to pass through.
+> If we now clear the posts we now see two outputs, the first is nearly an empty object with the event type (for example { type: 0 }) and the second is the HttpResponse object.
+> In the end we have different events and they are encoded in numbers. However, in code we do not have to use these numbers as we have a more convenient way.
+> We can check the event.type and compare this to HttpEventType which is a enum that we can import from @angular/common/http. This is supported in TypeScript only. If we now use HttpEventType followed by a period (.) we should see in our VS Code ide the translations of the event types numbers into a more human readable translation such as DownloadProgress, Response, ResponseHeader, etc. (Event type 0 translates to send).
+> We can use this to compare the event type to see if we got back for example a response by using the HttpEventType. This allows us very granular control over how we update the UI and what phase our current request is at.
+
+
+> Not only can we configure the observe mode but we can also configure the responseType.
+
+   posts.service.ts:
+      @Injectable({ providedIn: 'root' })
+      export class PostsServices {
+         deletePosts() {
+            return this.http.delete(
+               'https://angular-http-234fa.firebaseio.com/posts.json',
+               {
+                  observe: 'events',
+                  responseType: 'text'
+               }
+            ).pipe(tap(event => {
+               console.log(event);
+               if (event.type === HttpEventType.Response) {
+                  console.log(event.body);
+               }
+            }));
+         }
+      }
+
+> The default is json, which means the response data in the body of our response is in the json format. This tells Angular to automatically parse it and convert it to a JavaScript object.
+> We could tell Angular that the response is a text and to keep it as a text by setting the responseType option value to text. We could also use a blob if the response is a file. We can use the official documents to learn about all of the different responseTypes available to us.
+> The default is JSON and probably 99% of all cases, this is the type we want to keep and so typically we do not need to overwrite that option (unless we want to prevent Angular from parsing the JSON into a JavaScript object and allow us to do parse the data for ourselves at a later point in time).
