@@ -1,0 +1,105 @@
+> We are sending our HTTP requests and whenever we want to configure something like the search query params, we are doing this on a per request basis. Often times this is the way it should be because every request might need different headers.
+> However, if we want to attach a custom header to all our HTTP requests for example authenticating user by adding a certain param or a certain header to every outgoing request so that the backend can read it. We do not want to manually configure it in every request because it is very cumbersome.
+> For the above use case we can add interceptors.
+
+   auth-interceptor.service.ts:
+      import { HttpInterceptor, HttpRequest, HttpHandler } from "@angular/common/http";
+
+      export class AuthInterceptorService implements HttpInterceptor {
+         intercept(req: HttpRequest<any>, next: HttpHandler) {
+            console.log('Request is on its way');
+            return next.handle(req);
+         }
+      }
+
+> An interceptor is basically an Angular service. We export the class which implements HttpInterceptor interface which we need to import from @angular/common/http.
+> This interface forces us to add an intercept method. This method takes in two arguments and will get this automatically from Angular when it applies our interceptor.
+> The first argument is a request object which is of the type HttpRequest which we need to import from @angular/common/http. This is a generic type and we can use the angled brackets (<>) to inform Angular about the kind of data this request will yield.
+> The second argument is typically called next which is a function which will forward the request because the interceptor will basically run code before our request leaves our app and before the response if forwarded to the subscribe i.e. it steps into the request flow and next is a function we need to call to let the request continue its journey.
+> The next argument is the type of HttpHandler which we also need to import from @angular/common/http.
+> The interceptor now allows us to run code right before the request leaves our application. We should always return the result that next yields.
+> The next is an object with an important method which will allow us to let the request continue its journey. We use the handle method which we have to call and we should pass the req object.
+> If we do not return next.handle and passing in the request, then the request will not continue and our application will break.
+> With this setup we need to provide this service in a special way. In the app.module.ts file within the providers array we need to pass this AuthInterceptorService.
+
+   app.module.ts:
+      import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+      import { AuthInterceptorService } from './auth-interceptor.service';
+      @NgModule({
+         providers: [{ provide: HTTP_INTERCEPTORS, useClass: AuthInterceptorService, multi: true }],
+         ...
+      })
+
+> This should be a JavaScript object and not just the name of the service. We should have three keys:
+   1) the provide key and we use the HTTP_INTERCEPTORS as the value which needs to be imported from @angular/common/http. This is the token by which this inject can later be identified by Angular. Therefore, Angular will know that all the classes we provide on that token by using that identifier should be treated as a HTTP_INTERCEPTORS and should therefore run the intercept method whenever a request leaves the application.
+
+   2) the useClass key is used to point at our interceptor class we want to add as an interceptor. We would also need to import the InterceptorService file.
+
+   3) the multi key allows us to inform Angular that we have multiple interceptors and by setting this value to true will prevent Angular replacing existing interceptors.
+
+> This is a dependency injection syntax supported by Angular that allows us to register a service under a different identifier and to have multiple services under that identifier which will then all be provided/injected.
+> Angular will do the rest and grab all of our HTTP_INTERCEPTORS and run their intercept method whenever a request leaves the application.
+> With this setup we should now be able to reload our application and we should see the "Request is on its way" message in the console whenever we use any HTTP Requests such as fetching/Sending posts.
+> If we want to restrict the requests for which the interceptor executes, we have to do this in the intercept method. We can use the request object which has information such as the request url sent. We can do this by using a if statement to control this.
+      if (req.url === ...) {...}
+
+> In an interceptor not only can we log data but we can also modify the request object. However, the request object itself is immutable. So we cannot set req.url = to a new url. We would get an error.
+> If we want to modify a request we need to create a new one where we use req.clone. Inside of clone we pass in a JavaScript object where we now can override all the core things such as body, headers, method, params, url, etc.
+
+   auth-interceptor.service.ts:
+      import { HttpInterceptor, HttpRequest, HttpHandler } from "@angular/common/http";
+
+      export class AuthInterceptorService implements HttpInterceptor {
+         intercept(req: HttpRequest<any>, next: HttpHandler) {
+            console.log('Request is on its way');
+            console.log(req.url);
+            const modifiedRequest = req.clone({ headers: req.headers.append('Auth', 'xyz') })
+            return next.handle(modifiedRequest);
+         }
+      }
+
+> We can modify the headers and to keep the existing headers we would use req.headers.append. This will return a new headers object where we have all the old header values but now also with the new header values we specify.
+> The important factor is that we now do not forward the original req but we instead forward our modifiedRequest object.
+> This is a typical case for interceptors whereby we change the request and forward the modified version. If we only want to append the Auth header for certain URLs, we could use a if statement with the req.url key as an example.
+> If we now look at the JavaScript console network tab at our request and within the Headers tab, we should now see the Auth header added to the request.
+> Interceptors are therefore a super important feature when it comes to setting up HTTP requests.
+
+> We are not limited to interacting with the request in an interceptor but we can also interact with the response.
+> We do this by adding pipe to the handle method. The handle method provides us with an observable which in the end is the request with the response wrapped in an observable. Below is an example using the tap operator:
+
+   import { HttpInterceptor, HttpRequest, HttpHandler, HttpEventType } from "@angular/common/http";
+   import { tap } from "rxjs/operators";
+
+   export class AuthInterceptorService implements HttpInterceptor {
+      intercept(req: HttpRequest<any>, next: HttpHandler) {
+         console.log('Request is on its way');
+         console.log(req.url);
+         const modifiedRequest = req.clone({ headers: req.headers.append('Auth', 'xyz') })
+         return next.handle(modifiedRequest).pipe(tap(event => {
+            console.log(event);
+            if (event.type === HttpEventType.Response) {
+               console.log('Response arrived, body data: ');
+               console.log(event.body);
+            }
+         }));
+      }
+   }
+
+> We could use other operators such as map to truly transform the response data but we should be careful that the modified response data does not break our code elsewhere in the application.
+
+> We are not limited to one interceptor and we can add as many as we want. The order in which we provide the interceptors matters because that will be the order in which they are executed.
+> So in the app.module.ts file we add multiple interceptors by repeating the object with the three parameters inside of the providers array.
+
+   app.module.ts:
+      import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+      import { AuthInterceptorService } from './auth-interceptor.service';
+      import { LoggingInterceptorService } from './logging-interceptor.service';
+      @NgModule({
+         providers: [
+            { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptorService, multi: true },
+            { provide: HTTP_INTERCEPTORS, useClass: LoggingInterceptorService, multi: true },
+         ],
+         ...
+      })
+
+> In the above example the AuthInterceptorService will execute first and then the LoggingInterceptorService will execute after.
