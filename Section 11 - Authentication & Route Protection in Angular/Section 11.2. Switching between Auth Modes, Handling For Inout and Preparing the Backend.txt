@@ -1,0 +1,64 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+Switching Between Auth Modes:
+> In order to switch between the Login and Signup buttons, we need to add the logic in the auth.component.ts file to manage the currently active mode.
+> We can have a property called isLoginMode (or anything else we would want) and the idea is to store if the user is currently login or in a signup mode and we adjust the user interface dynamically.
+> We can create a method such as onSwitchMode which we can call in our user interface to change that property value. This would allow us to dynamically change what is on the template page based on an event triggered by the user.
+> We can use the logic of !isLoginMode which would allow us to switch between the true and false values as this will reverse the value of the property to the opposite current value.
+
+   onSwitchMode() {
+      this.isLoginMode = !this.isLoginMode
+   }
+
+> We can call this method on a click event within our auth.component.html template on the button element.
+
+   <button class="btn btn-primary" (click)="onSwitchMode()">Switch to Login</button>
+
+> We can use this to change the button labels of our form. We can use string interpolation to show a dynamic text on our buttons.
+
+   <div class="mt-3">
+      <button class="btn btn-primary" type="submit">{{ isLoginMode ? 'Login' : 'Sign Up' }}</button> |
+      <button class="btn btn-primary" type="button" (click)="onSwitchMode()">Switch to {{ isLoginMode ? 'Sign Up': 'Login'}}</button>
+   </div>
+
+> We now have dynamic buttons for our authentication page based on the mode.
+
+
+Handling Form Input:
+> We can use either a template driven approach or a reactive approach to setup our authentication form.
+> We have two inputs in our authentication the email and password that require setup.
+> We should also add validations to the form inputs. For the email we can use the built in validators of required and email directives using the template driven approach.
+> For the password we would want a validation for the minimum length. The firebase API requires passwords to have at least 6 characters.
+
+   <input type="email" class="form-control" ngModel name="email" required email>
+   <input type="password" id="password" class="form-control" ngModel name="password" required minlength="6">
+
+> On the form element itself we can give it a localReference and set this to the ngForm object provided automatically by Angular and use this to disable the Login/Sing Up button if the form input fields are not valid based on this object.
+
+   <form #authForm="ngForm" (ngSubmit)="onSubmit(authForm)">
+      ...
+      <button class="btn btn-primary" type="submit" [disabled]="!authForm.valid">
+         {{ isLoginMode ? 'Login' : 'Sign Up' }}
+      </button>
+   </form>
+
+> We can also get access to the submitted form in our component.ts file by adding a ngSubmit on our form element to trigger a function and passing our form object whenever we submit our form.
+> We can also reset the form when we submit our form using this function.
+
+
+Preparing the Backend:
+> It is important to note that we do not need firebase to add authentication to an Angular application. We can add it with any backend whether it is a REST of GraphQL API.
+> Our backend just needs to offer endpoints that we can use to create our users and log users in to get such a token. Most APIs support this (if we create our own API we could add our own Auth logic) requirement.
+> We are using firebase because it is easy and free to use and does not require us to write server side code.
+> Within our project console in firebase if we navigate to the database to update the rules to:
+
+   {
+      "rules": {
+         ".read": "auth != null",
+         ".write": "auth != null"
+      }
+   }
+
+> We need to click publish to update the rules. With this change we are no longer able to read or write to our firebase database as we now need to be authorised to do so and will see such error in the console.
+> In firebase we need to now navigate to Authentication to setup a authentication method. If we click on the setup sign-in method we can choose email and password and enable this.
+> We now have the built-in firebase authentication active where we can send request to certain endpoints offered by firebase to create users and log users in. In the Authentication Users tab this is where the users email and passwords will be stored.
