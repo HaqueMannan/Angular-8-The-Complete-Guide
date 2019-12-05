@@ -1,0 +1,72 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+Preparing the Signup Request:
+> We can go to the firebase Auth REST API documentation which will give us an overview over the REST endpoints that firebase offers to us for creating users and logging the users in: 
+https://firebase.google.com/docs/reference/rest/auth
+
+> We require only two methods from the firebase Authentication REST API:
+   1) Sign up with email / password
+   2) Sign in with email / password
+
+> The URL endpoint we need to sign users up is https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=[API_KEY]
+> We need to send the request with the following data:
+   Property Name        Type	      Description
+   email	               string	   The email for the user to create.
+   password             string	   The password for the user to create.
+   returnSecureToken	   boolean	   Whether or not to return an ID and refresh token. Should always be true.
+
+> The response we would get back from the request:
+Property Name           Type	      Description
+idToken                 string	   A Firebase Auth ID token for the newly created user.
+email	                  string	   The email for the newly created user.
+refreshToken            string	   A Firebase Auth refresh token for the newly created user.
+expiresIn               string	   The number of seconds in which the ID token expires.
+localId                 string	   The uid of the newly created user.
+
+> Firebase will give a idToken when a user is signed up on the Response payload. Therefore, the user does not need to login again once they have signed up as we would already have the idToken.
+> Tokens have an expire time as an added security to expire after a certain amount of time.
+> We need a new service to deal with the request sending. In the auth directory we can add a auth.service.ts file.
+> This service will be responsible for signing users up, signing users in and managing the idToken of the user.
+> We can have a signup() method which is responsible for signing up users and therefore we will need the Angular HttpClient which needs to be injected in the constructor.
+> We can use the HttpClient to send a POST request to the API URL. We would need to replace the [API Key] with our firebase API Key. We can find this in the project console clicking the gear icon and selecting Project Settings we should see a page containing the Web API Key.
+> This is the URL we have to send a request to and since it is a POST request we also need to attach some data. This should be a JavaScript object which should hold the three properties above i.e. email, password and returnSecureToken as per the API documentation.
+> The returnSecureToken should always be set to true as per the API documentation.
+> This will now send a HTTP request to the backend provided we are subscribed to the HttpClient Request. We can return this so that we can subscribed to the HTTP request within our component.ts file whenever we call the method. This is where we may be interested in getting back the response of that request.
+> Returning the response allows us to check for errors which we can then display an error message and whilst we are waiting for a response we might want to show some loading indicator. Therefore, returning the observable such that we know the current state of the request in the auth.component.ts would make a lot of sense and hence we would return in the auth.service.ts and subscribe to the request in our component.
+> We can also create an interface inside of our auth.service.ts file which will describe how the response object would look like which would have the five properties as described in the firebase REST API documentation.
+> This is optional but it is a good practice in Angular/TypeScript applications to define the data we are working with. This will help at hinting at the type of data we would get back using the angled brackets (<>) from the generic HTTP requests methods.
+
+
+Sending Signup Request:
+> To send the signup request method we can now use it within our auth.component.ts file within the onSubmit method before we refresh the form.
+> We would need to extract the email and password from our submitted form object and store these in variables which we can use within our signup request method.
+> We would need to inject the AuthService into our component file in order to use the signp method.
+> We would have to subscribe to the response in our component file which is the observable in order for the HttpClient to execute the POST request.
+> We now have a way to signup users to our firebase application using the firebase REST API.
+> If we go to our firebase console and within Authentication Users tab we should see the new user registered.
+> If we now retry to signup the same user again using the same email we should now see an error as the user already exists. Firebase will give us an error code of "EMAIL_EXISTS" as part of its API logic which we can use to handle that type of error.
+> We can display errors to the user as well as display a loading spinner whilst we are waiting for the request.
+
+
+Loading Spinner:
+> We can go to https://loading.io/css/ to use some beautiful loading spinners in our application.
+> We can create a new folder called loading-spinner within our shared directory which would hold a loading-spinner.component.ts and loading-spinner.component.css file.
+> In the css file we can paste the code from the selected spinner we wish to use in our application.
+> We can change the colour from white to another colour of our choosing for the loading spinner.
+> In the component.ts file we can export a class which has a @Component decorator. We should give it a selector property and for the template property we can copy and paste the HTML code for our selected spinner. Finally, for the styleUrls property we can link our .component.css file.
+> We need to import and declare this component in the app.module.ts file declarations array.
+> We can now use this spinner component in our auth.component.html file by using its reference like an element.
+> We can create a isLoading property in our aut.component.ts file to track whether we are waiting for a request and use this logic to hide/display the spinner as well as the form itself using the *ngIf directive on our template.
+
+   <div *ngIf="isLoading">
+      <app-loading-spinner></app-loading-spinner>
+   </div>
+   <form #authForm="ngForm" (ngSubmit)="onSubmit(authForm)" *ngIf="!isLoading">
+
+
+Error Handling:
+> If we look at the firebase REST API documentation we can see the common error codes such as EMAIL_EXISTS, OPERATION_NOT_ALLOWED, etc.
+> If we were to look at the error response object we would notice that this is nested in errors.errors.message which is provided by the firebase API.
+> We can use this information to display useful error messages to our users.
+> We can have an errors object which is null by default and then set his value if the http method subscribe error handler. We can then display this whenever we get an error object when making the HTTP request to the firebase REST API.
+> We can use a rxjs operator in our auth.service.ts file to handle the error message logic rather than adding the logic (such as a switch statement logic) inside of our component which should primarily handle the display of a component.
