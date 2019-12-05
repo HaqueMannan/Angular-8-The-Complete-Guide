@@ -1,0 +1,64 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+Sending Login Request:
+> To allow a login authorisation we need to add a login function in our AuthService.
+> The login should take in the email and password.
+> The login would need to send a request and we should use the firebase authentication REST API documentation to understand what components we would need for the http request.
+> The login would be a POST request. The URL also requires our Project API Key. The request also takes in an object which has the email, password and returnSecureToken properties.
+> We would get the same response as when we signup with an additional registered field.
+> We should update the AuthResponseData interface to include this as an optional field.
+> We would return the request so that in our component we can subscribe to the observable returned from the HttpClient request.
+> The subscribe method would be exactly the same as what we had for the signup.
+> Since this is exactly the same, we could create a variable e.g. authObs which will be the type of Observable which we would need to import from rxjs and this observable would be a generic type which we need to specify using the angled brackets (<>) the type of data this observable would yield eventually. This would therefore be our AuthResponseData interface type.
+> We would need to export the AuthResponseData interface as we are now using it in another file.
+> We can then subcribe to the authObs which would have our logic which is either it resolves or it sends an error.
+
+   let authObs: Observable<AuthResponseData>;
+
+   if (this.isLoginMode) {
+      authObs = this.authService.login(email, password);
+   } else {
+      authObs = this.authService.signup(email, password)
+   }
+
+   authObs.subscribe(resData => {
+      console.log(resData);
+      this.isLoading = false;
+   }, errorMessage => {
+      console.log(errorMessage);
+      this.error = errorMessage;
+      this.isLoading = false;
+   });
+
+> The subscription code now lives below the if else statement because we know that after the if else statement, one of the two observable will be stored in the authObs and therefore we can subscribe to it and since both use the same subscribe logic we can share the code.
+> This will help lean our code and enforce the DRY concept.
+
+
+Error Handling:
+> We can share the error handling logic across both the singup and login by creating a new private method.
+> This method should get an error response which is the type of HttpErrorResponse which needs to be imported from @angular/common/http.
+> We can then add our error response logic.
+> We can then pass the error method which contains our central code for error handling.
+
+   private handleError(errorRes: HttpErrorResponse) {
+      let errorMessage = 'An unknown error occurred!';
+
+      if (!errorRes.error || !errorRes.error.error) {
+         return throwError(errorMessage);
+      }
+
+      switch(errorRes.error.error.message) {
+         case 'EMAIL_EXISTS':
+            errorMessage = 'This email already exists'
+      }
+      return throwError(errorMessage);
+   }
+
+   login(...){
+      (...).pipe(catchError(this.handleError));
+   }
+
+> we can use the catchError pipe for both the signup and login observables to handle the errors.
+> Again we are now adopting the DRY code approach for a leander code.
+> We can add more error messages in our switch statement because in hte firebase authentication REST API documentation it lists the common error messages for login such as EMAIL_NOT_FOUND, INVALID_PASSWORD, etc.
+> We could give the same generic error message for invalid email and password to not give any hints away as to what went wrong when logging in which adds a level of protection. But for learning purposes we can use specific error messages for each.
