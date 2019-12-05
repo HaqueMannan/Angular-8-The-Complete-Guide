@@ -1,0 +1,37 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+How Authentication Works:
+> Authentication does not mean that users have to enter their email and password to login rather how authentication works technically behind the scenes.
+> Most modern web application have a client i.e. the user using the browser and we have a server. When a user enters their credentials (email and password) then this authentication data is sent to the server where that data is validated.
+> We cannot do validation in the browser because all of the JavaScript code is exposed to our users and therefore not stored securely. Also the logic could be changed on the client by editing or disabling JavaScript in the browser.
+> The authentication has to occur on the server where the users of our application cannot do anything.
+> In a traditional web application where the server would render different html pages for different URLs we enter, we would work with a session.
+> However, with Angular we build single page applications which also means we decouple the frontend from the backend. For the different pages we visit, this is handled by Angular Router. The JavaScript in the browser takes over and re-renders pages/parts of our pages when the user interacts with our Angular application.
+> We still reach out to the backend as we learned in the HTTP module and can still interact with a server but the server with be a RESTful API and therefore we will not use a session because RESTful APIs are stateless (the same is true for GraphQL APIs).
+> Our backend would be an API and would not render the HTML pages we are on and therefore sessions cannot be used because our server does not care about our client. The client and server are decoupled from each other.
+> They communicate between the HttpClient that Angular offers but there is no connection. The server does not know our client.
+> The alternative approach is where the server can continue to validate the user email and password and if all that data is valid, the server will send the client a JSON web token which is a coded string which contains a lot of meta-data and the string is encoded and not encrypted.
+> The code being encoded is an important thing as this would mean that the string could be unpacked by the client. More importantly that token is generated on the server with a certain algorithm and a certain secret which only the server knows and only the server can validate the incoming tokens for their validity.
+> The idea is that the client which is our browser/Angular app stores that token in some storage (e.g. local storage of the browser) and it attaches the token to any request that thereafter is sent to server which needs to be authenticated.
+
+                              Stores Token
+               [ Storage ]<--------------------[ Client ]----------------
+                                                |     ^                 |
+                                                |     |                 |
+                                 Send Auth Data |     |  Token          |
+                                                |     |                 | Stored token is sent to
+                                                |     |                 | authorise subsequent
+                                                v     v                 | request
+                     RESTful API is stateless  [ Server ]<---------------
+
+> Therefore, if we need to be authenticated to store recipes, we need to send the token in the header or as a query parameter to that request we are sending to the server.
+> The server is able to validate that token because the server did create that token with a certain algorithm and a certain private key which is only know to the server.
+> This is how the token is secure because we cannot generate or edit the token on the client because it will not fit the algorithm and private key used on the server and the server is able to determine that the token is invalid and block access.
+> The server knows more than the client but we give the client one important piece which is required to authenticate subsequent requests. That piece is given by the server and cannot be created on the client.
+
+Adding the Auth Page:
+> We would need an area for the user to login. This auth page would be available in an unauthenticated state which would allow users to signup/login to the application.
+> All other pages can be locked down by Authentication and should not be available if the user has not logged in.
+> We can create a new directory within our application app folder which will contain all the component/code for the authentication. We can call this directory auth.
+> The auth.component.html and auth.component.ts file will contain our component code for user authentication in our application. We would need to add this to our app.module.ts declarations array. We would need to register a new route in the app-routing.module.ts file so that this component is available to our users in our application.
+> We can update our header.component.html to add a new link to be able to navigate to the auth page using the navigation bar.
