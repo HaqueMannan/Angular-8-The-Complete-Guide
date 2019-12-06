@@ -1,0 +1,35 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+Attaching the Token with an Interceptor:
+> We can use an interceptor as we manipulate all the outgoing http request in the same way.
+> We can use the interceptor to manipulate our requests instead of manually repeating ourselves for all requests which use the same logic to add the token to the request.
+> We would create a auth-interceptor.service.ts file which will hold our logic and store this in the aut directory since it is in relation to authentication.
+> This interceptor should implement the HttpInterceptor interface from the @angular/common/http. This would force us to use an intercept method which requires two arguments of the request and next. We would need to return next.handle() passing in our request.
+> We would want to edit our request and add our token before passing the request to the next handler.
+> We would add a constructor and inject the AuthService so that we can reach out to the AuthService User Subject and subscribe to it.
+> We have the same issue as before whereby we have two observables i.e. the user object and next handler. We can solve this problem by using the exhaustMap.
+> We would want to create a variable and set its value to clone the request and set its params to auth: user.token and pass this forward from our interceptor.
+> We should now have a interceptor which now adds the token to all outgoing requests.
+> We need to go to our app.module.ts file and add this interceptor within the providers array.
+
+   providers: [ShoppingListService, RecipeService, { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptorService, multi: true }],
+
+> The interceptor will be used for all routes, however, this will cause issues when logging in whereby we do not have a user and therefore we return null and try to pass this as the token. To fix this, we can add a logic to check if we have a user. If we do not have a user we would next.handle the original request else we would return the modified request which will contain the token.
+> This would now only add the token if we have a user.
+> As an alternative we could check the URL of the outgoing request and only add the token for specific URLs or exclude certain URLs.
+> We should now be able to login and fetch data using the Interceptor.
+> This interceptor will also now work for all our requests and will add the token to when we store requests.
+
+
+Adding Logout:
+> In the AuthService we need to add a logout method.
+> Logging out is super simple. We use our user object and set its value to null.
+
+   logout() {
+      this.user.next(null);
+   }
+
+> This will revert the user back to its initial state before the user was logged in.
+> We should now update our component template to link the method to the logout button.
+> Our interceptor should now not work correctly for requests which require an authentication token which is exactly the behaviour we want.
+> We should finally redirect the user when they logout.
