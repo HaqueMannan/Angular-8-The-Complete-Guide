@@ -1,0 +1,21 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+Dynamic Components:
+> Dynamic components are essentially components we create dynamically at runtime. So if we want to show an alert, modal or an overlay which should only be loaded upon a certain action such as an error overlay on the entire screen or something of that nature.
+> This can be implemented by using dynamic components.
+> This is not a specific feature/term provided by Angular but we can simply add components that we load through our code.
+
+
+Adding an Alert Modal:
+> In the shared directory we can create a alert directory which will hold our alert modal component files where we can build our alert modal (i.e. the component.ts and component.html files).
+> We would need to add the component to our app.module.ts file declarations array.
+> We can add this component into our auth.component.html by using the selector tag and adding a if statement to display it if we have an error and set the message to the error property from our auth.component.ts file.
+> We are simply showing our own alert component.
+> Now that we have a alert model created we now want to load this dynamically.
+
+
+Understanding the Different Approaches:
+> Dynamic components in general means we want to display some component dynamically which means it is not always there but it is there once something specific happens in our code.
+> We typically want to control this programmatically when that component should be loaded.
+> We can use the *ngIf - this allows us to use a declarative approach which means we simply add that component selector in our template and we use ngIf to only load it upon a selected condition. We use the ngIf to control whether the component is added to the DOM.
+> The alternative is to use a Dynamic Component Loader. This was a helper utility that does not exist anymore or that we should not use it anymore. But in the end it is a general concept of creating a component in code and then manually attach it to the DOM (imperative approach). We have to control in our code by ourself how that component is instantiated and that data is passed into it and also that it is removed. So everything that *ngIf does for us we have to do on our own.
