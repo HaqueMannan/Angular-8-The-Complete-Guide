@@ -1,0 +1,72 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+Reflecting the Auth State in the UI:
+> We can redirect a user once they have logged in. Since we want to always redirect the user once we authenticate them we can do this either in the component or within the service, both are valid method.
+> In the component file we would need to inject the Router from @angular/router and in our subscribe success case we can use the router to navigate to a different page.
+> If we were to do this in the service we would add our navigate in the handleAuthentication function.
+> This is a perfect use case for programmatic navigation.
+> We would want to correctly display the state of the application in the UI and this would generally occur in the header component. 
+> If the user is not logged in we would not want to disable the recipes link and the manage dropdown and enable the Authentication link and if the user is logged in we would want to do the vice versa. We would also want to display a logout button for a user who is logged in.
+> We need to get the current authentication status into the header component so that we can find out whether we have a user with a valid token or not. We can then use that information to update the template correctly.
+> In the authService we have a user subject which informs all places in the application when our user changes. The header component can subscribe to that subject to update the UI based on the user status.
+> In the header.component.ts file we can inject the AuthService and on the ngOnInit we can setup a subscription to the authService.user subject.
+> We should always manage our subscription so that we can unsubscribe if it is not required anymore.
+> In the subscription we get access to the user object and so if we have a user object we are logged in and if user is null then we are not logged in.
+
+   ngOnInit() {
+      this.userSub = this.authService.user.subscribe(user => {
+         this.isAuthenticated = !!user;
+      });
+   }
+
+> The !!user syntax checks if we are not have a user which will be true if the user is null and false if we have a user object but that is the opposite of what we need. Hence, we add an extra exclamation mark (!) to inverse the value and get true or false i.e. true when we have a user and false if we have no user.
+> This is the shorter syntax to writing:
+
+   this.isAuthenticated = !user? false : true;
+
+> We can console.log(!user) and console.log(!!user) to see what is happening to understand this shorter syntax logic.
+> We can now use this property to update our header component appropriately.
+
+
+Adding the Token to Outgoing Requests:
+> Just because we know that we are authenticated and we have a token somewhere in our user object, firebase does not know that. Therefore outgoing requests will be rejected causing our HTTP requests to be denied.
+> We need to manipulate our outgoing HTTP requests that are related to data storing and fetching.
+> We need to update the data-storage.service.ts file which contains the functions to be updated to attach our tokens to the URL API requests.
+> We can inject our authService in order to get access to the user which has the token needed.
+> We do not need a subscription to the user because we do not care about every change to the user object, instead when we try to store or fetch recipes we just want to get the token of the currently authenticated user and we do not want an ongoing subscription.
+> In the authService we need to store the token in a way that we can access it through a different means (i.e. not through a subject which is great for reactively updating the user interface) so that we have an on demand user data. There are many ways we can achieve this:
+> Since we are only interested in the token we can just store the token in a variable which is null initially. We set the token whenever we emit a new user subject.
+> The alternative is to use a different type of subject which rxjs provides which is called BehaviourSubject which needs to be imported from rxjs.
+> This tye of subject behaves exactly like the other subject which means we can call next to emit a value and we can subscribe to it to be informed about new values. The difference is that BehaviourSubject also gives subscribers immediate access to the previously emitted value even if they have not subscribed at the point in time that value was emitted.
+> This means we can get access to the currently active user even if we only subscribe after that user has been emitted. So even if the user logged in before the time we fetch data and need the token at that point in time we can still get access to the latest user.
+> The BehaviourSubject needs to be initialised with a starting value which in our case would be null. This is added to our AuthService and nothing else would need to be changed.
+> In our data-storage.service.ts file we can reach out to our AuthService user and get the currently active user and be done with that.
+> We still need to subscribe to it and we could immediately unsubscribe. However, the better approach is to use pipe with a special operator that rxjs provides us.
+> The take operator needs to import from rxjs/operators and this operators takes in a number e.g. 1 as an argument. This tells rxjs that we want to take one (or more) value from the observable and thereafter it should automatically unsubscribe.
+
+   this.authService.user.subscribe(...).unsubscribe() c.f.
+   this.authService.user.pipe(take(1)).subscribe(...)
+
+> This will get us the currently active user on demand at the point we make the HTTP request and not the future users object.
+> We cannot have two observables inside each other, so the solution is to pipe two observables (i.e. user observable and the http observable) together into one big observable. This is an advanced technique of rxjs.
+> The exhaustMap operator needs to be imported from rxjs/operators and this would wait for the first observable to complete and thereafter it gives us the resolved observable and now we can return a new observable in there which will then replace the previous observable in the entire observable chain.
+> So we start off with a user observable and once we are done with with it, the user will be replaced in the observable chain with the inner observable which we return in the function we pass to exhaustMap.
+> We return the overall observable which means we can still subscribe to the observable returned from our HTTP function and in the end it will be a HTTP observable because we switch it inside on the exhaustMap.
+> Inside we utilise the user observable to get the user out of it one time only and un-subscribed to that observable and then automatically replaced it with the new HTTP observable.
+> To add the token to the request for firebase and its realtime database REST API we add the token as a query parameter in the URL. For other APIs, we would add it as a header in the request. We should always refer to the API documentation on how to implement the token.
+> To add a query parameter we have two options, either manually in the URL using the question mark (?) followed by the query parameter key:value pair or we add a second argument to the http method which is an options object where we can set the params option.
+
+   return this.http.get<Recipe[]>(
+      'https://angular-http-234fa.firebaseio.com/recipes.json?auth=' + user.token
+   )
+
+   or
+
+   return this.http.get<Recipe[]>(
+      'https://angular-http-234fa.firebaseio.com/recipes.json',
+      {
+         params: new HttpParams().set('auth', user.token)
+      }
+   )
+
+> We should now be able to fetch from firebase by passing in the active user token when making HTTP requests to the firebase REST API.
