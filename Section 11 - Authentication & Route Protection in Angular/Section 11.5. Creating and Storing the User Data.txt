@@ -1,0 +1,19 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+> We should create a user.model.ts file in our auth directory. The idea is that the model will store all of the core data that makes up a user and even helps us with validating whether that token is still valid as tokens can expire after an hour.
+> We set the token and tokenExpirationDate as private because it should not be retrievable, instead when the user (or us a developer) want to get access to the token, we should be required to do that in a way that will automatically check the validity.
+> This can be achieved by setting a getter using the get keyword. The getter looks like a function but we actually access it like a property so that we can do something like user.token in our code.
+> This is a special property where we can write code that runs when we try to access the property.
+> A getter cannot be overwritten by a user and this will throw an error. There are setters but we do not need that here.
+> We want to use an if statement to check that there are no tokenExpirationDate and that the tokenExpirationDate is not greater than the current time stamp then we do not return the token as we know that the token has expired.
+> In our AuthService we want to store the User as a new Subject which needs to be imported from rxjs where its type would be set to the UserModel which also needs to be imported.
+> Therefore, we emit a new user i.e. we .next() a new user whenever we login or logout.
+> So for signup we know when we succeed we get the AuthResponseData which contains that token we need for the user as well as the email and expiry date for the token.
+> We can use the tap operator which needs to be imported from rxjs/operator inside of the .pipe method. The tap operator allows us to perform some operation without changing the response. So it steps into the observable chain but it does not stop, block or change it. It simply runs some code with the data we are getting back from the observable i.e. the response in this case.
+> We can create a new user inside of the tap method using the observable's response data.
+> The getTime function gets the time since the beginning of time (i.e. in JavaScript was in 1970) in milliseconds.
+> We can add to that the expiresIn that we get from the firebase API and we need to add a plus sign (+) infont of the property name to convert it into a number multiples by 1000. The expiresIn gives the time in seconds and so by multiplying by 1000 will convert it into milliseconds.
+> Using the current milliseconds and adding the expiresIn milliseconds will provide us the expiration in milliseconds. By wrapping this in new Date will convert the milliseconds into a date object which is a concrete timestamp in a date object form and not in milliseconds.
+> We can pass this expiration date to our new User constructor as the forth argument.
+> We now construct the new User with the data we get back from the backend firebase API. We can now use the subject to .next that user we created. This will emit this as our currently logged in user in this application.
+> We need the exact same logic for login a user. We can therefore use the same approach as error handling by adding a new private method which will create our User and .next the user. In tap when we get the response data we can call on our method and forward all the arguments it needs which we have from the response data.
