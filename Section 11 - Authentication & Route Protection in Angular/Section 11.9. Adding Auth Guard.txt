@@ -1,0 +1,27 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+Adding Auth Guard:
+> We can add a Auth Guard to prevent users from visiting certain routes without being authenticated into our application.
+> Route Guards are what we need to solve this problem. A route guard allows us to run some logic right before a route is loaded. We can deny access if a certain condition is not met.
+> In the auth directory we can create a new file called auth.guard.ts which will act as our authentication route guard.
+> The auth guard should implement the CanActivate interface imported from @angular/router.
+> Since this is a service we need @Injectable which needs to be imported from @angular/core and we can then pass in the providedIn: 'root' as the options object parameter.
+> We need to add the CanActivate method and this must be implemented in a certain way. It recieves the currently active route which is of the type ActivatedRouteSnapshot and the router state which is of the type RouterStateSnapshot, both types imported from @angular/router.
+> The can activate has to return either a boolean or a Promise that eventually yields a boolean or an Observable which yields a boolean. We would need to import Observables from rxjs.
+> We need to inject the authService so that we can find out if the user is authenticated or not by looking at that user behaviour subject. We would return the user instead of subscribing to it because this is already an observable (the user is a subject and therefore an observable).
+> This is not an observable that return a boolean. We can use pipe and use the map operator from rxjs/operators to transform the observable value.
+> We can use the !!user to convert a true-ish value like an object (anything that is not null or undefined) to true boolean or converts a false-ish value like null or undefined to false boolean.
+> We now have a boolean which returns a boolean value which we can now allow us to use the canActivate guard around routes that we want to protect.
+> In the app-routing.module.ts file, the path we want to protect we can add the canActivate property key which holds an array of all the canActivate guards we want to register for the route i.e. the AuthGuard in this case for our recipes route.
+> We can no longer access the recipes route unless we are logged in and authenticated in our application.
+> In the AuthGuard canActivate method we can pass in a urlTree which allows us to automatically redirect an un-authenticated user. We still need to inject the router from @angular/router.
+> We can call createUrlTree on the router and pass in our normal array of route segments we wan to navigate to.
+> We would need also need to update the canActivate definition to be able to yield a urlTree as well in the Promise and Observable. The urlTree needs to be imported from @angular/router.
+> Previously we would have had to do this manually by injecting the router and then using the tap operators from rxjs to manually redirect if the user was not authenticated.
+> The auth guard now makes sure that we can only navigate to routes which are protected by the AuthGuard when we are authenticated and if we try to enter the URL manually in the browser this will redirect any un-authenticated users back to the /auth route to login.
+> We have one issue. We essentially setup an ongoing subscription to the user observable. The user object can emit more than once, however, we do not want this for our Auth Guard which could lead to strange side effects if our guard keeps on listening to the user subject.
+> Instead we want to look into the user value for one time only and then not care about it anymore unless we run the auth guard again. Therefore, we should use the take(1) operator from rxjs/operators to make sure we always take the latest user value and then unsubscribe for this guard execution.
+
+
+Important Note:
+If we hold the command (or control on Windows) and click on the CanActivate, this will allow us to peak into the file containing the code to see the definition of the function/method. This will help identify what arguments are required and the type for a given function.
