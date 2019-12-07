@@ -1,0 +1,53 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+What are Angular Modules?
+> The Module (i.e. .model.ts (NgModule) files) are a way of bundling Angular building blocks together such as components, directives, services and pipes.
+> We have to group those altogether into such an Angular Modules so that Angular is aware of these features.
+> Angular does not automatically scan all the files in our project and does not search all the code we write and automatically detect all components and services.
+> Instead we need to tell Angular what is a component and which components we have. We can bundle them together in Modules. Every Angular App needs at least one module i.e. the AppModule. We cannot have an Angular application without it.
+
+> Angular analyses these NgModules to understand our application and its features.
+> Angular modules define all building blocks our app uses (components, directives, services and pipes).
+> An app requires at least one module (AppModule) but may be split into multiple modules.
+> Core Angular features are included in Angular modules (e.g. FormModule) to load them only when needed.
+> You cant use a feature/building block without including it in a module.
+
+
+Analysing the AppModule:
+> The AppModule is not the only module i.e. the file with @NgModule decorator for example the RoutingModule.
+> The AppModule has a long list of declarations. This is a list of all of the components, directives and custom pipes we are using in our application. All these have to go into declarations otherwise we are unable to use them in our Templates or Routes.
+> The AppModule has a list of imports. This list allows us to import other modules into the module itself. This is important to split our application into multiple modules. Thus far we only created one extra module which is the RoutingModule but we are also using a couple of modules which ship with Angular such as the FormsModule, ReactiveFormsModule, HttpClientModule, etc.
+> If we were to look inside a module such as FormModule, we would see @NgModule decorator as well and in there we would also have declarations array with all the form related directives Angular supports. Therefore, we do not need to add all these features individually to our declarations array as we can simply import the FormsModule which speeds this up.
+> The providers array has a list of providers. This defines all the services we want to provide. Any services we intend to inject needs to be provided in this array or we can provide it in the service file itself by Injecting the providedIn: 'root' key which would add the service to our AppModule providers array.
+> The bootstrap array in important for starting our application. It defines which component is available right in the index.html file. Typically, we only have one component there.
+> We could define multiple component in the bootstrap array but each component will then kind of be detached from the other components. We will be creating different root component trees in our application. This is rarely what we want because it makes working between these component much difficult.
+> The entryComponent is an array for components we create in code programmatically (dynamic components). This allows Angular to be aware of this component when it needs to be created programmatically.
+> We might want to split our application code into multiple modules because it allows our application code to be leaner as we seen wih the RoutingModule. This makes our existing modules focused/leaner and easier to edit/maintain.
+> The exports array allows us to export our Module. Every module works on its own in Angular. They do not communicate with each other.
+> If we declare a component in a certain module, we can only use that component in that module and no where else. We have to export the module and its config so that it is not just available in its own module but that it is also available in the other module where we import the module.
+> When we import a module, we import everything that module exports.
+> The bigger the application grows we might want to decide to split our code to have leaner modules that are easier to manage and understand and to also enhance performance.
+
+
+Working with Multiple Modules:
+> Instead of having one big AppModule we can split that into an AppModule that defines our AppComponent and then we have two separate new modules so-called Feature Modules.
+> The name feature modules does not mean we create them in any special way as it is still a class with the @NgModule decorator, it just means that this is a module that groups together components, directives, services and pipes that are used in a certain feature area of our application. For example we can have a ProductsModule and an OrdersModule.
+> This is an important step of Angular application development. Splitting our application into feature modules ensures when other developers including ourselves work o our code we quickly know where to look for the setup for this specific part of our application.
+> So in our Recipes Application we can possibly have three main feature areas: recipes, shopping-list and the auth. The shared and header are not feature modules as the shared can be used by any module and the header is part of the main AppModule component.
+> To create a feature module for example the recipe, we create in the recipes directory a new file with the module.ts extension for example recipes.module.ts.
+> This file will be responsible for defining the building blocks for the recipes feature module. We simply export a class using Module in the class name as the naming convention e.g. RecipesModule.
+> We need to add a NgModule decorator which needs to be imported from @angular/core. The NgModule takes in an object to configure the module. We can now add basically whatever we also added to the AppModule e.g. declarations, imports, exports, etc.
+> We would add an exports array to our RecipesModule so that our AppModule can use this feature module. We can export all components we declared in the declarations array so that we can use them in any module other than the RecipesModule which imports the RecipesModule.
+> When importing an external module we need to first need to import the file from its location (this is a TypeScript feature and has nothing to do with Angular) and then add the module name into the imports array in @NgModule decorator.
+> We would get an error of Template parse errors: router-outlet is not a known element.
+> In the recipes.component.html we are using <router-outlet> which is a directive provided by Angular and is not available in the entire application. This is made available in the RouterModule which we import. We also export this so therefore in our RecipesModule we would need to import the RouterModule.
+> We have to remember everything in a module works standalone. We can export something to then be able to import something into another module but that alone does not mean we can use features made available in another module.
+> How can we fix this?
+
+Splitting Modules Correctly:
+> To fix the error would be to simply import the RouterModule inside of our RecipesModule imports array (remembering to also import the file for TypeScript). This may fix the issue but we may get another error if our recipes component files use other features for example ngForOf.
+> the *ngIf and *ngFor are provided by the BrowserModule and all the forms related things are provided by the FormsModule and/or ReactiveFormsModule and the HTTP related things are provided by the HttpClientModule and so on.
+> Note the HttpClientModule only provides services and services work differently and therefore are indeed available application wide even in modules where we do not add the HttpClientModule. As soon as we use something that is not a service, we only have access to what we import in the Module.
+> The BrowserModule is a special case and can only be used once which is in the AppModule. This is because it does more than add *ngIf and *ngFor as it does some general application start up work that only has to run once. Instead of importing the BrowserModule in the RecipesModule, we would import the CommonModule in all other modules where we want to get access to *ngIf and *ngFor directives. The CommonModule is imported from @angular/common.
+> Once all the modules are imported we should now see our application running again without any errors.
+> We now have a feature outsourced into its own module.
