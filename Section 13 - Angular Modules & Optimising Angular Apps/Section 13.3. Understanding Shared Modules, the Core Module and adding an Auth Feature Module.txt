@@ -1,0 +1,52 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+Understanding Shared Modules:
+> Below is a hypothetical application whereby we have two modules (we would also have an AppModule but it is not important for understanding shared modules).
+
+   ProductsModule          SalesModule
+   ModalComponent          ModalComponent
+   DropdownDirective       DropdownDirective
+   FormsModule             FormsModule
+   ProductsComponent       SalesComponent
+
+> As we can see that these two modules only differ in one component i.e. the ProductsComponent and the SalesComponent.
+> All other components and directives that the two modules use are essentially the same.
+> We can put such shared features into a shared module which we then import into both other modules. this is a great step to avoid code duplication and have leaner modules.
+
+   ProductsModule          Shared Module              SalesModule
+   ProductsComponent       ModalComponent             SalesComponent
+   SharedModule            DropdownDirective          SharedModule
+                           FormsModule
+
+> In our recipes application we do not have many shared component other than the shared directives. For the purpose of demonstration we would create a SharedModule within the directory which can be shared by the RecipesModule and the ShoppingListComponent.
+> We can have multiple Shared Modules and therefore they do not have to be named SharedModule. If we have one it would make sense to use SharedModule else we should give the shared module file name a more suitable summarised name which summarises which features will be in there.
+> The SharedModule is a regular Angular Module and therefore would receive the @NgModule decorator.
+> The idea here is that we continue to declare and import anything into this module that might be used by other modules but since every module works standalone, we need to then also make these available to other modules by also using the exports array to export these declaration and imports (i.e. we use the declarations, imports and exports arrays in @NgModule decorator).
+> Therefore, whenever we import the SharedModule we would have access to all these features which we initialise in our declarations and imports arrays so that other modules where we want to use one or all of these features we do not have to add to their modules each feature but we simply import the SharedModule and we would then get all access. This is because we are exporting all the features in the exports array. If we did not export the features we would not have the access.
+> To use the SharedModule, we would go into our other module such as the ShoppingListModule or the RecipesModule and in the NgModule imports array we can add the SharedModule which we must also import the file location.
+> Note: this is not useful in our recipes application as we are simply replacing the CommonModule for the SharedModule, but if we were to use other features such as the AlertComponent or LoadingSpinnerComponent then using a SharedModule would make sense, but this is for demonstration purpose of a Shared Modules concept.
+> We would face an issue whereby we would get an error where the DropdownDirective which is part of the declaration of two modules i.e. the AppModule and the SharedModule.
+> This is an important concept we have to understand when it comes to Modules:
+   - We can only declare component, directives and pipes once. We cannot do that multiple times.
+   - We can import a module into multiple module imports.
+> If we declare a component, directive and pipe in a module we must not declare it anywhere else even if we need it in another module. The solution is then to export the feature in the modules NgModule exports array and then import that module into another module imports array.
+> Double declaration are not allowed in Angular. Therefore, in our AppModule declaration we would need to remove the DropdownDirective and any other shared components such as the AlertComponent, LoadingSpinnerComponent, etc. and then import the SharedModule. We would also need to remove the entryComponents array from AppModule and place this into the SharedModule. This would now fix the error.
+
+
+Understanding the Core Module:
+> The third module type we can work with is the CoreModule. It is important to note that all these modules (feature module, shared module and core module) are created in the same way using the NgModule decorator. It is the things that we put in there and how we use them differs and what we mean by different module types.
+> The CoreModule is there to make the AppModule a bit more leaner. We can use the CoreModule to move the services out of the AppModule and into the CoreModule which then in turn is added back to the AppModule.
+> The alternative is to use the providedIn property on the @Injectable decorator within the services which means we do not need to provide the services in the AppModule providers array at all.
+> If we do add the services in the AppModule providers array then using the CoreModule can be an idea to keep our AppModule leaner.
+> In our AppModule file within the providers array we have the ShoppingListService, RecipesService and our HTTP_INTERCEPTORS. The idea behind the CoreModule is that we provide these application-wide service that are important from the start of the application and we provide this in a separate module which we provide into the AppModule to keep our AppModule leaner and to also have a place where we can quickly see all the core services of the application.
+> This is only a pattern we may use if we are providing the service type in the providers array. If we are passing a providedIn object in @Injectable within the service which is now application wide, we cannot and should not add it to the providers of the AppMpdule. The latter approach is the more recommended approach to take when creating services.
+> Some things like the HTTP_INTERCEPTORS we have no alternative and we would have to add them to the providers array in our AppModule file.
+> We do not need to export our CoreModule services because services work differently to declaration. Only declaration and other modules need to be exported.
+> Services are automatically injected on the root level and we do not need to export them to make this happen and so are the exception to the export rule.
+> We would import the CoreModule into the AppModule @NgModule decorators imports array even though we are not exporting any services but we are exporting the CoreModule itself which has the services.
+> The application will now have the same functionality as before.
+> A CoreModule is optional and is only required if we provide the service in the providers array in the AppModule rather than providing the service in the file itself using @Injectable providedIn property.
+
+
+Auth Feature Module:
+> We can finally organise our code by creating a AuthModule which will store all our auth feature code. This would make our AppModule code even more lean and make our application as a whole more lean.

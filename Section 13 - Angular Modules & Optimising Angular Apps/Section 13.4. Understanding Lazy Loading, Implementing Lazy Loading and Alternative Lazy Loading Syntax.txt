@@ -1,0 +1,73 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+Understanding Lazy Loading:
+> Now that we have learned about the different module types we can use in Angular with the feature module being the more important type we can now dive into optimisation.
+> So far the splitting of application code into modules is only cosmetical. It makes the code in our individual module leaner and help us maintain that code but it does not influence the performance of our application at all.
+> Lazy loading is the first optimisation concept. Using multiple feature modules is a pre-requisite for lazy loading optimisation.
+> Consider the below application:
+
+                                 User
+
+   /                          /products            /admin
+   AppModule/CoreModule       ProductModule        AdminModule
+
+> We have three routes: the root, /products and /admin and we have a user visiting this page. Every route is associated with a module where each module might have multiple components, directives, services and pipes that belong to it.
+> Without lazy loading we currently load every module and its components.
+> Would it not make sense that when the user visits the root route we load that AppModule/CoreModule and we visit a different page like the /products we load the ProductModule and similarly the same for /admin page loads the AdminModule.
+> With lazy loading we only load the code that belongs to the areas of our application and that we only load the code that belongs to these areas when we really need it.
+> Therefore, with lazy loading we only initially load our root route contents i.e. AppModule/CoreModule code and all components/directives/services/pipes that are registered there and we do not load the other modules.
+> Only when we visit the other module that is when we load the module and all its components/directives/services/pipes that are registered to that module.
+> The advantage of this is that initially we download a smaller code bundle and we download more code when we need it but initially our application is able to start faster because it has to download and parse less code on the first visit of a certain route.
+
+
+Implementing Lazy Loading:
+> If we go to the network tab in our Browsers developer tools and reload the application, we would see that we download a bunch of files which are rather large (please note since we are in development the code are even larger because the code is not optimised and has a lot of debug code to make development easier).
+> With lazy loading we should be able to decrease the file size even further (which would also be much smaller for the production code which would be optimised).
+> Starting with the RecipesModule we can implement lazy loading. Since the RecipesModule also has a RecipesRoutingModule and by having the routes registered in this file is an important starting point.
+> For lazy loading the feature module needs to bring its own routes configuration using .forChild as we are doing with the RecipesRoutingModule.
+> The path would need to change to an empty path.
+> In the AppRoutingModule file we need to add another route which will be the route for recipes which we removed from our RecipesRoutingModule. We now add a loadChildren property to our route configuration.
+
+   recipes-routing.module.ts:
+      { path: '', component: RecipesComponent, canActivate: [AuthGuard], children: [...] }
+   
+   app-routing.module.ts:
+      const appRoutes: Routes = [
+         { ... },
+         { path: 'recipes', loadChildren: './recipes/recipes.module#RecipesModule' }
+      ]
+
+> The loadChildren is a special property in a route config which Angular understands as to only load the Module we are going to point at when the user visits the path specified. This property takes in a string which is the path to the module we want to load when the page/path is visited.
+> This is a relative path from the app-routing.module.ts file.
+> We also need to add the name of the module because Angular would need to know the class name. We do this by adding a pound sign (#) followed by the name of the Module class within the string value.
+> This would mean the code is now split and that everything at the path we entered i.e. the entire module and everything that module uses  (all the declaration of that module) will be put into a separate code bundle which is then downloaded and parsed on demand as soon as the user visits the page/route and not sooner.
+> This is achieved by the Angular CLI when we build our app which it would detach the codes from our main bundle of which the app starts with.
+> What we import from the module is bundled into one code bundle and so if we have an unused import lying around in our AppModule (or any other module) then that import would be included in the AppModule code bundle even though we are not using it. Therefore to have the greatest effect and save the most code we should make sure the imports in our Modules are correct.
+> We have to make sure that in the recipes-routing.module.ts file we have an empty path because we have to keep in mind that we have now changed the path config to include the recipes path in our app-routing.module.ts file and it will load the RecipesModule when the user visits /recipes route. Therefore, in the RecipesModule we are now already at /recipes route and hence in the RecipesRoutingModule which is only kicking in when we do visit the RecipesModule, we should start with nothing because are already at the /recipes route.
+> After any lazy loading configuration we would need to stop the server and rebuild the code using Angular ng serve command to see the changes to take effect.
+> We would see an error because in the AppModule we are trying to load the RecipesModule in the @NgModule decorators imports array which we are also loading in our app-routing.module.ts file. We would need to remove the RecipesModule from our AppModule file when we are implementing lazy loading. Otherwise, we are importing the RecipesModule both eagerly and lazily at the same time and that will cause an error.
+> We should re-save this again and recompile our code and our application should be working again without any error. If we now look at the network tab in the browsers developer tool we should now see a smaller bundle file. If we now login to our application and visit the recipes page/route we would now see the recipes-recipes.module.js file which is our recipes bundle.
+> We now have an application working as before but we are now lazy loading.
+> If we have a page that will always be visited or with a very high chance that it will be visited then lazy loading that page/module might not be worth it because we have to consider that lazy loading of course comes with the downside of that extra code bundle being downloaded later. Therefore, once it is needed there might be a slight delay in our application since that code needs to be downloaded and parsed (i.e. we are basically postponing that).
+
+
+Alternative Lazy Loading Syntax with Angular 8+:
+> If you're using Angular 8+, you can use an alternative syntax for specifying lazy-loaded routes.
+> Instead of:
+
+   app-routing.module.ts:
+      const routes: Routes = [{
+         path: 'your-path',
+         loadChildren: './your-module-path/module-name.module#ModuleName'
+      }];
+
+> We can use:
+
+   app-routing.module.ts:
+      const routes: Routes = [{
+         path: 'your-path',
+         loadChildren: () => import('./your-module-path/module-name.module').then(m => m.ModuleName)
+      }];
+
+> example path object: 
+   { path: 'recipes', loadChildren: () => import('./recipes/recipes.module').then(m => m.RecipesModule) }
