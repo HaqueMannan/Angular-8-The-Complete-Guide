@@ -1,0 +1,28 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+Adding Routes to Feature Modules:
+> Thus far we are outsourcing our Recipes Components declarations in a separate module so that the AppModule is a bit leaner.
+> We can do more than this. We can also move the recipes related routes configuration away from the AppRoutingModule and into our RecipesModule.
+> In the RecipesModule imports array, we can add .forChild method to the RouterModule. The .forRoot is only used once, essentially in the AppRoutingModule to configure our root routes.
+> Within a feature module that we plan on importing into our AppModule we would use .forChild. This would automatically merge the child routing configuration with the root routes.
+> To keep the RecipesModule leaner (and this is optional) we can create a separate file in the Recipes directory called recipes-routing.module.ts file which will focus on the recipes routes and de-clutter our RecipesModule that focuses purely on User Interface logic.
+> We add to the imports array the RouterModule which we import from @angular/router and then on that module we now use .forChild and then pass in our recipes routes which we should store in a const variable.
+> We then export the RouterModule so that in the RecipesModule we can import this routing module.
+> We now have one less route in our AppRouterModule using this adjustment. Since our AppModule imports the RecipesModule, the recipes routes should also be available in our general routing configuration.
+> Therefore, the routing configuration is now split into two files but our application will continue to work as it did before.
+
+
+Component Declarations:
+> We have now split our application into four modules (AppModule, RecipesModule, AppRouterModule and RecipesRoutingModule).
+> Before splitting the application into more Modules (including different types of modules) we need to dive into a note about components we load via routing for example the RecipesComponent which is loaded when we visit /recipes.
+> The RecipesComponent is also declared in the RecipesModule declarations array. It is really important to understand that we do not just add to the declarations what we plan on using in a template but we also have to add any Components we load via routing configuration.
+> It is not enough to point at the components in the routes component key inside of the RecipesRoutingModule but we also need to declare the component in the RecipesModule declarations and exports arrays.
+> The other important thing to note is that now that we managed the loading of our components, there is no reason to export all the recipes component in our RecipesModule because we are now only using them internally in the RecipesModule.
+> We are using them either embedded into our other components or by loading them through the RecipesRoutingModule, both are part of this RecipesModule file. Therefore, there is no need to export the recipes components anymore because we are no longer using the recipes in the AppComponent or any child components of the AppComponent.
+> The application will continue to work as normal even when we remove the components from the RecipesModule exports array.
+
+
+The ShoppingList Feature Module:
+> We can now apply the same for the Shopping-List components and create a feature module the same as we did with the RecipesModule. 
+> Note: we can choose to have a separate ShoppingListRoutingModule but since this is a very small file we could contain all the code including the route configuration inside of our ShoppingListModule instead.
+> This will lean our application even further.
