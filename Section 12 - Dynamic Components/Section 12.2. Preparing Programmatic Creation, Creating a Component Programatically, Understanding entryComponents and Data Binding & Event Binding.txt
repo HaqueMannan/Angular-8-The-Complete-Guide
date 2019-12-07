@@ -1,0 +1,184 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+Preparing Programmatic Creation:
+> We need a new method in our auth.component.ts file to show the error alert modal. This method has to be called whenever we have an error.
+> Therefore, whenever we set the error in our subscribe observable we also have to call the new method.
+> We would not need a global error property using this approach.
+> The goal of this method is to dynamically create our component Programmatically.
+> We need to manually instantiate a component.
+> A simple approach is to import our alert.component.ts file and then create a property and set it to the AlertComponent which is a class at the end of the day.
+
+   auth.component.ts:
+      import { AlertComponent } from '../shared/alert/alert.component';
+      export class AuthComponent {
+         private showErrorAlert(message: string) {
+            const alertCom() = new AlertComponent();
+         }
+      }
+
+> This is valid TypeScript code but is not valid Angular code. This will not throw an error if we compile it but it also will not work in Angular. We cannot create our component like the above.
+> Instead we need to let Angular to create this component and for this Angular provides us with a tool which is the ComponentFactory.
+> We need to inject a ComponentFactoryResolver and not the ComponentFactory itself and this must be imported from @angular/core.
+> In our own method we can now use that resolver to get access to ComponentFactory. We use the ComponentFactoryResolver and there we have a resolveComponentFactory method which gives us access to a ComponentFactory as provided by Angular.
+> We need to pass the type of our component to the resolveComponentFactory method which would be our AlertComponent. Angular will now know where to look for that component which it then should be able to create for us.
+> This method would return a alertComponentFactory and not the component itself. This is essentially an object that knows how to create AlertComponent.
+
+   auth.component.ts:
+      import { AlertComponent } from '../shared/alert/alert.component';
+      export class AuthComponent {
+         constructor(private componentFactoryResolver: ComponentFactoryResolver) {}
+
+         private showErrorAlert(message: string) {
+            const alertComponentFactory = this.componentFactoryResolver.resolveComponentFactory(AlertComponent);
+         }
+      }
+
+> With the factory we can use it to create a concrete component. For this we need a place where we can attach it in our DOM. We do not have that place and so we need to tell Angular where to add that place.
+> Angular requires a ViewContainerRef which is an object managed internally by Angular which gives Angular a reference (a pointer) to a place in the DOM with which it can interact with.
+> We can create a helper directive which could be named anything like placeholder. So in our shared directory we can create a new directory called placeholder and create a placeholder.directive.ts file.
+> In there we export a class which will receive the @Directive() decorator which needs to be imported from @angular/core.
+> This Directive decorator takes in an object and needs the selector property. This should be an attribute selector so that we can add this directive as an attribute to any element.
+> This directive now needs to do one important thing and that is to inject the ViewContainerRef which needs to be imported from @angular/core. This will automatically give us access to the reference/pointer at the place where this directive is then used.
+> This will allow us to get the information about the place where we use that directive.
+> The ViewContainerRef has useful method for example for creating a component in that place where it sits.
+> We need to set this to a public property so that we can access the ViewContainerRef from outside. We need this because now we will be able to add the directive to some place in our DOM/templates and then get access to it with @ViewChild and then get access to the public viewContainerRef to work with of that directive.
+
+   placeholder.directive.ts:
+      import { Directive, ViewContainerRef } from "@angular/core";
+
+      @Directive({
+         selector: '[appPlaceholder]'
+      })
+      export class PlaceholderDirective {
+         constructor(public viewContainerRef: ViewContainerRef) {}
+      }
+
+> We need to declare that directive in the app.module.ts file.
+
+   app.module.ts:
+      import { PlaceholderDirective } from './shared/placeholder/placeholder.directive';
+      @NgModule({
+         declarations: [ ..., PlaceholderDirective]
+      })
+
+> We now have everything setup so that we can now implement this directive to create our programmatic component.
+
+
+Creating a Component Programmatically:
+> With the PlaceholderDirective added, we can go back to the auth.component.html file to add a new element.
+> We can use a <div> element but the better element is the <ng-template> element. This is a directive that Angular ships with which will not render anything to the DOM but is still accessible in the Angular templating language.
+> This is a better approach because we do not add any overhead of the extra DOM element. We can now simply get access to a place in the DOM.
+> We add our selector appPlaceholder to the element like an HTML attribute. This new appPlaceholder directive we created is now considered by Angular whenever it parses the template but does not render a real element to the real DOM. Angular will remember this place internally.
+
+   auth.component.html:
+      <ng-template appPlaceholder></ng-template>
+
+> In the auth.component.ts file we can get access to that directive with the help of @ViewChild which needs to be imported from @angular/core. We now pass a selector this can be a local reference or a type.
+> If we pass in a type, it will look for the existence of that type in the template. Therefore, we can pass in our appPlaceholder directive as a type, @ViewChild will automatically find the first place where we use that directive in the template of this component.
+> We can store this in a property of that component e.g. alertHost and this would be the type of our PlaceholderDirective.
+
+   auth.component.ts:
+      import { Component, ComponentFactoryResolver, ViewChild } from '@angular/core';
+      import { PlaceholderDirective } from '../shared/placeholder/placeholder.directive';
+      export class AuthComponent {
+         @ViewChild(PlaceholderDirective, { static: false } ) alertHost: PlaceholderDirective;
+
+         constructor(private componentFactoryResolver: ComponentFactoryResolver) {}
+
+         private showErrorAlert(message: string) {
+            const alertComponentFactory = this.componentFactoryResolver.resolveComponentFactory(AlertComponent);
+            const hostViewContainerRef = this.alertHost.viewContainerRef;
+
+            hostViewContainerRef.clear();
+            hostViewContainerRef.createComponent(AlertComponentFactory);
+         }
+      }
+
+> We can now get access to the viewContainerRef of our host i.e. alertHost. Our host has the viewContainerRef property because it is just a directive we are selecting from our template and our PlaceholderDirective exposes the viewContainerRef as a public property. Therefore we can get access in our auth.component.ts file.
+> We store this in a new const variable inside of our showErrorAlert function.
+> We then clear anything that may have been rendered there before by simply calling .clear on this variable. this will clear anything that has been rendered there before before rendering something new at that position.
+> We can now use our ComponentFactory to create a new AlertComponent in the hostViewContainerRef. This is done by using hostViewContainerRef and calling .createComponent. This does not need the type of the component but a ComponentFactory.
+> This will now create a new component in that place within the DOM.
+
+
+Understanding entryComponents:
+> We proceeded with rendering the component programmatically but now when we try to test it in our application, we now get an error in the JavaScript console:
+   Error: No component factory found for AlertComponent. Did you add it to @NgModule.entryComponents?
+> Angular behind the scenes, with any component (including Directives and Pipes) we plan on working with, we need to add them to our declarations array in the app.module.ts file. We did this for the AlertComponent. This is important for Angular to understand what is a component, directives and so on we have in our application because it does not automatically scan all of our files and so we need to tell it what components exist.
+> This alone makes Angular aware of it so that it is able to create such a component when it finds it in one of two places. The first place would be in our template (i.e. .component.html file) and the other place in our routes (i.e. app-routing.module.ts). 
+> When we point at a component in these files, Angular will check our declarations array and if it finds it there it will be able to create such a component and load it.
+> One place it does not work is when we want to create the component manually in code (i.e. in the /.component.ts file) which is what we are trying to do in the auth.component.ts file.
+> In our auth.component.ts file we are creating our own ComponentFactory (i.e. alertComponentFactory) where we reference the AlertComponent and here Angular does not automatically reach out to the declaration array.
+> We need to deliberately need to inform Angular that the AlertComponent will need to be created at some place and that Angular basically should be prepared for this.
+> It will prepare itself for this creation when it finds a component in the template or the route config but not in the component.ts file.
+> To tell Angular to be prepared for the creation of that component we need to add a special property to the object we pass to NgModule. This property is called entryComponents.
+> The entryComponents is also an array and it is an array of component types but only of components that will eventually need to be created without a selector or the route config being used.
+
+   app.module.ts:
+      import { PlaceholderDirective } from './shared/placeholder/placeholder.directive';
+      @NgModule({
+         entryComponents: [AlertComponent]
+      })
+
+> We simply add AlertComponent to the entryComponents array. Angular is now ready to create this component whenever we prompt it to. We prompt Angular to create the component when we use the .createComponent method.
+> We are now able to render our component to the screen without any errors programmatic (dynamically) via code.
+> We now cannot dismiss the alert modal and we cannot see the error message.
+
+
+Data Binding & Error Handling:
+> In our AlertComponent we have @Input and @Output decorators but we are not using property or event binding on our component at the moment because we created it in code. We cannot use the square brackets or the parenthesis syntax here.
+> We simply have to store the component that is created in the .createComponent method in some variable with which we can work with thereafter.
+
+   auth.component.ts:
+      import { Component, ComponentFactoryResolver, ViewChild, OnDestroy } from '@angular/core';
+      import { Observable, Subscription } from 'rxjs';
+      import { PlaceholderDirective } from '../shared/placeholder/placeholder.directive';
+      export class AuthComponent implements OnDestroy {
+         @ViewChild(PlaceholderDirective, { static: false } ) alertHost: PlaceholderDirective;
+         private closeSub: Subscription;
+
+         constructor(private componentFactoryResolver: ComponentFactoryResolver) {}
+
+         ngOnDestroy() {
+            if (this.closeSub) {
+               this.closeSub.unsubscribe();
+            }
+         }
+
+         private showErrorAlert(message: string) {
+            const alertComponentFactory = this.componentFactoryResolver.resolveComponentFactory(AlertComponent);
+            const hostViewContainerRef = this.alertHost.viewContainerRef;
+
+            hostViewContainerRef.clear();
+            const componentRef = hostViewContainerRef.createComponent(AlertComponentFactory);
+
+            componentRef.instance.message = message;
+            this.closeSub = componentRef.instance.close.subscribe(() => {
+               this.closeSub.unsubscribe();
+               hostViewContainerRef.clear();
+            });
+         }
+      }
+
+> We can use this componentRef variable and use the instance property which gives us access to the concrete instance of the component that was created.
+> This instance should have the properties we added to our AlertComponent i.e. a message and a close property. If we type a period (.) after the instance we should see message and close properties here in our AuthComponent.
+> We can now set messages equal to the message we are getting as a string and this will ensure the message is displayed. This will now fix the issue with the message in the Alert Modal.
+> To close the modal again we reach out to the instance and call on the close property and subscribe.
+> Close in the end is just an EventEmitter. We learned that we should use EventEmitter when it is decorated with Output() and whenever we manually subscribe to something we would want to use a subject. In this case this is the only exception to those rules.
+> We can manually subscribe to the close in our auth.component.ts file and it is ok in this use case.
+> We should store the subscription because we should manage the subscription manually.
+> We can call unsubscribe because we know that the component will be removed. We can then use our hostViewContainerRef and call clear again and this will remove the modal from the DOM i.e. clear all content that was rendered there.
+> The final clean up we would want to do is to remove the subscription if we get rid of the AuthComponent. If the AuthComponent is removed we also do not want the old subscription to sit around anymore. We can do this on the ngOnDestroy lifecycle method.
+> We check if we have an active closeSub subscription and if this is true we want to unsubscribe when the AuthComponent is destroyed.
+> This completes our alert modal where we can display errors and also close the modal.
+> This is how we can create dynamic components inside of code programmatically.
+
+
+Conclusion:
+> The simpler approach is to use the *ngIf directive and is the recommended approach as Angular does all the heavy lifting for us.
+> If we have another use case or absolutely want to do it programmatically the above is the approach we would have to use.
+> We first create our own ComponentFactory using the ComponentFactoryResolver and we then use a ViewContainerRef which we can get access to with the help of a helper directive to then dynamically create and render our component with the help of Angular.
+> Any components we are rendering like this needs to be added to the entryComponents array in the app.module.ts NgModule decorator otherwise we would get an error.
+> These are the two different approaches we can use to create dynamic components.
+> We can read more on this in the Angular Official documentation:
+https://angular.io/guide/dynamic-component-loader
