@@ -1,0 +1,17 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+Preloading Lazy-Loaded Code:
+> We can optimise lazy loading i.e. how the lazy loading loaded code is then loaded. As of now we load the code bundle whenever we need it. This leads to a tiny delay in our application. The bigger the module and the slower the internet connection the more noticeable (longer) that delay will be.
+> We can tell Angular to preload lazy loaded modules to avoid this delay.
+> We have to go to our forRoot router module i.e. app-routing.module.ts file where we configure our root router and we can pass in a second argument to forRoot which is an object where we can configure the root router.
+> We can setup a preloadingStrategy property and we can set this value to PreloadAllModules which needs to be imported from @angular/router. The default is NoPreloading.
+
+   app-routing.module.ts:
+      @NgModule({
+         imports: [RouterModule.forRoot(appRoutes, { preloadingStrategy: PreloadAllModules })],
+      })
+
+> We are telling Angular that we are generally using lazy loading and it will not put all the code into one bundle and it will split it into smaller bundles. However, it will preload the bundles as soon as possible so that when we are on the auth page it would have already preloaded the recipes and shopping-list bundles so that they are already available when we need them.
+> The advantage is that the original bundle is still kept small and the initial loading phase is fast. But then when the user is browsing the page and therefore we have some idle time, we then preload these additional code bundles to make sure that subsequent navigation requests are faster.
+> Therefore, we are getting the best of both worlds i.e. fast initial loads and fast subsequent requests.
+> We can build our own preloadingStrategy where we can have more refined logic where we control certain routes should be preloaded but this is a more advanced topic.
