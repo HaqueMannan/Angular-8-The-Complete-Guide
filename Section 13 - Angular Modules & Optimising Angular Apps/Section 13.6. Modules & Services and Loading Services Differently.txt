@@ -1,0 +1,56 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+Modules & Services:
+> Now that we have learned about lazy loading we can now dive into what is special about services and modules as it is strongly related to lazy loading.
+> We can now dive into where we can provide services and how that affects the instance of the services we are working with.
+> We can provide services in the AppModule. We can also provide services in the AppComponent (or other Components). We can also load services to providers of any Eager-loaded Module. We are also able to add services to providers of lazy-loaded Module.
+> It is also important to note we can also provide services by adding the providedIn: 'root' configuration in the @Injectable decorator and is the recommended for all services that we plan on providing in AppModule.
+> When we provide a service in the AppModule or injected in the @Injectable, the same instance of that service is available application-wide. We are always working with the same single instance of the service.
+> If we provide the service in the components (no matter if that is the AppComponent or another Component) then the component is only available for dependency injection inside of that component-tree. All the components would share the same instance but only in that component tree. If we provide the component to multiple sibling components of our application then all these sibling component trees have access to this service but each component tree has access to its own service instance.
+> If we add services to providers of an Eager-loaded Module the services will be available application-wide with one and the same instance. This has the same effect as adding the service to the AppModule or adding it to the root via @Injectable.
+> Services added to providers of a Lazy-loaded Module the service is only available in the loaded module and it receives its own instance.
+> If we do provide a service in both the AppModule and the Lazy-loaded Module then the service is of course available application wide but the Lazy-loaded Module will get a separate instance and not the same instance we use in the rest of the application.
+> Sometimes this can be desirable but in other cases this might lead to a strange behaviour where we would have expected to work with one and the same instance but infact did not.
+> When we add services in the AppModule or in @Injectable we use the so-called root injector which is the root dependency injection mechanism of Angular.
+> When we provided services in the Component we use the so-called component specific injector which is not the root injector or the entire application.
+> When we provided services in an Eager-loaded Module we use the so-called root injector.
+> When we provided services in an Lazy-loaded Module we use the so-called child injector which creates a child dependency injection for that module and therefore that module has its own instance of that service.
+> Therefore, the default should be to use the AppModule or providedIn: 'root' in the @Injectable. We may have cases where a component tree needs its own service. We should pretty much never provide services in Eager-loaded Modules and we should avoid this because it is harder to detect services there. Finally, if we deliberately want to have a separate instance of the service we can add the service to the Lazy-loaded Module.
+
+
+   AppModule/@Injectable:
+   - Service Available App-wide
+   - Use Root Injector
+   - Should be the default
+
+   AppComponent(or Other Components)
+   - Service Available in Component-Tree
+   - Use Component-Specific Injector
+   - Use if service is only relevant for component tree
+
+   Eager-Loaded Module
+   - Service Available App-wide
+   - Use Root Injector
+   - Avoid at all cost!
+
+   Lazy-Loaded Module
+   - Service Available in Loaded Module
+   - Use Child Injector
+   - Use if Service Should be Scoped to Loaded Module
+
+
+Loading Services Differently:
+> We can create a dummy service to see this in practice which we named logging.service.ts which sits in the app directory.
+> This is a simple service which has a lastLog property which is the type of string and we have a printLog method which takes in a message which is of the type of string and it console.logs the message and we also set the lastLog property to this message and prior to setting the lastLog property we also console.log the previous lastLog value.
+> If we call this service printLog method in app.component.ts file on ngOnInit by injecting the LoggingService and passing in 'Hello from AppComponent ngOnInit!' as the message.
+> If we also add this in our shopping-list.component.ts file on the ngOnInit similar to the above but the message now reads 'Hello from ShoppingListComponent ngOnInit!'.
+> We now have two places where the service is called and if we look at the Console in our browsers developer tools and reload our application we should see Hello from AppComponent ngOnInit! and then undefined which is stemming from the lastLog initial value.
+> If we now navigate to the shopping list route we would now see Hello from ShoppingListComponent ngOnInit! but we would also see Hello from AppComponent ngOnInit! as the lastLog property value.
+> This proves that we are using the one and the same instance of this service in the entire application because we are loading the service in two different component but we are getting the same object otherwise the lastLog would be undefined when we call it again on the shopping list route.
+> We can change this and add this service to the AppModule NgModule providers array. This would give the same behaviour/output as above.
+> If we now try to add the service to an Eager-Loaded Module such as the CoreModule which we imported into the AppModule. In the core.module.ts file in the @NgModule decorator we can add to the providers array the LoggingService. We would get the same output as the above.
+> If we now add the service back into our AppModule which is an Eager-loaded Module and also add the service to a Lazy-loaded Module such as the ShoppingListModule. We would now see when we load our application Hello from AppComponent ngOnInit! and undefined. However, when we navigate to the shopping-list route we now see Hello from ShoppingListComponent ngOnInit! and undefined.
+> We are now using two different objects/instances of that same service. This is not a bug but an intended feature.
+> We should always think twice before adding a service to any other module other than the AppModule.
+> This also includes modules that we import into Lazy-loaded Modules. for example if we add the service to our SharedModule only. The SharedModule is imported by the AppModule and so it is an Eager-loaded Module but it is also imported in the ShoppingListModule which is a Lazy-loaded Module. This turns the SharedModule in the ShoppingListModule into a Lazy-loaded Module. So the SharedModule in this case is both. We would now have the same issue as before with the Lazy-loaded Module whereby the ShoppingListComponent will have its own instance of the LoggingService object to the AppComponent.
+> This is the most problematic bug we often end up with when providing services in other modules. As soon as we load our SharedModule into a Lazy-Loaded Module, the services provided in the SharedModule will be recreated for the Lazy-loaded module and we then have a behaviour we do not want.
