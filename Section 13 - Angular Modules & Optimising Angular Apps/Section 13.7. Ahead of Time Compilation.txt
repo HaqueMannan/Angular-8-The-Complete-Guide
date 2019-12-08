@@ -1,0 +1,60 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+Ahead-of-Time (AoT) vs Just-in-Time (JiT) Compilation:
+> This is a final optimising technique we can perform before we ship our application to production.
+
+   <Our Code & Template> -----> includes syntax only Angular understand (e.g. *ngIf)
+         |
+         V
+   TypeScript compiler compiles
+   our code to JavaScript
+         |
+         V
+   Angular compiler (automatically includes inbuilt code)
+   compiles templates syntax to JavaScript DOM instructions --> Ahead-of-Time (AoT) Compilation
+         |                                                      Angular template compiler runs during
+         V                                                      build process (before the app is deployed)
+   Just-in-Time (JiT) compilation
+   Angular template compiler runs in the browser (at runtime)
+
+> The templates we are creating are not a 1to1 snapshot that is going to get rendered into the real DOM. Instead Angular will parse our templates and then update the real DOM based on the instructions we placed in our templates.
+> Therefore, all of our Components and Directives are in the end translated to commands that will be used to alter the real DOM. JavaScript in the browser does not understand our templates, Angular does.
+> While we use the TypeScript compiler to compile the TypeScript code to JavaScript code which is understood by the browser.
+> We also have another compiler in the build process working behind the scenes as part of ng serve which is the Angular compiler. This is a crucial part of the Angular framework and it is actually quite large.
+> The Angular compiler itself is written in JavaScript and is part of the Angular application we are seeing in the browser with ng serve.
+> This compiler takes the compiled JavaScript code and our templates and actually translates all the logic there into concrete instructions that update the real DOM. This by default happens all in our browser because all of the Angular compiler is part of the Angular code we are shipping.
+> This process is called Just-in-Time (JiT) Compilation because the Angular templates are compiled just-in-time when the rendering occurs in our browser.
+> The downside is that this compilation takes time (it is super fast but still is a small performance hit). Also the Angular compiler for compiling our templates is not that small and is part of our Angular application even though it has no purpose with our business logic other than bringing it all to the screen (this is important but a little annoying that it is part of our application).
+> The Angular compiler does not need to be part of our application. Since the Angular compiler is responsible for template code/instructions into JavaScript commands which the browser understands we can do that during development as part of the build process.
+> That process is called Ahead-of-Time (AoT) Compilation because we compile the code ahead of the execution of the file. The Angular template compiler runs during the build process before the application is deployed and not in the browser.
+> The ng serve process as the default uses the JiT Compiler because that is better for debugging and fast update of the running application and there is nothing wrong with that. During development we have no problems of shipping a too big of an application where the compiler is part of the code because we are not optimising the code during development.
+> As soon as we are preparing ourselves for development and building our Angular application for production to then upload it to a server we want to optimise our code as much as possible and shrink it to as a small of a bundle as possible.
+> We do this with a command in the terminal within our root project directory:
+   ng build --prod
+
+> We add the --prod flag which will take our Angular application and builds our entire application to a few files which we can then deploy.
+> This command will automatically do an important optimisation for us by using AoT Compilation without having to configure anything special.
+> The JiT compiler is a little more forgiving compared to the AoT compiler and we may see some errors in compiling our code such as 'Property 'controls' does not exist on type 'AbstractControl' in our recipe-edit.component.html file.
+> The problem is the code:
+   <div *ngFor="let ingredientControl of recipeForm.get('ingredients').controls; let i = index" [formGroupName]="i">
+
+> The recipeForm.get('ingredients').controls gives us back a FormArray that has a controls property but it does not know what we get back here. It knows that we get back an AbstractControl and FormArray is an AbstractControl but basically an extended version with this extra .controls property and other AbstractControl do not have a extra controls property and this is the problem with the above code that the AoT compiler has.
+> The solution is to remove that code from the template file and move it to our recipe-edit.component.ts file using a getter property. We can then use the getter in our template file.
+> A getter property is like a function which we can use like a property in a template but we cannot set a value to it though and can only read from it which is achieved by using the get keyword infront of the property name.
+
+   recipe-edit.component.ts:
+      get controls() {
+         return (<FormArray>this.recipeForm.get('ingredients')).controls;
+      }
+
+   recipe-edit.component.ts:
+      <div class="row mb-2" *ngFor="let ingredientControl of controls; let i = index" [formGroupName]="i">
+
+> We made this code more TypeScript secure and this is important for the AoT Compiler to not fail anymore. > If we run the ng build --prod command again, this should execute without errors and we should now see a new dist directory created in the root of our project directory containing our production code.
+> This dist directory contains a folder with our project name and in this folder we have multiple files which basically contains the content of our application (i.e. code files).
+> This is now bundled and optimised and decreased in size to be as small as much as possible.
+> The AoT Compilation is one important optimisation of our application code because it removes the Angular compiler from the final bundle.
+
+Useful Resources:
+Official Documents: https://angular.io/guide/ngmodules
+NgModule FAQ: https://angular.io/guide/ngmodule-faq

@@ -8,7 +8,7 @@ import { HeaderComponent } from './header/header.component';
 import { AppRoutingModule } from './app-routing.module';
 import { SharedModule } from './shared/shared.module';
 import { CoreModule } from './core.module';
-import { LoggingService } from './logging.service';
+// import { LoggingService } from './logging.service';
 
 @NgModule({
    declarations: [
@@ -22,7 +22,7 @@ import { LoggingService } from './logging.service';
       SharedModule,
       CoreModule
    ],
-   bootstrap: [AppComponent],
+   bootstrap: [AppComponent]
    // providers: [LoggingService]
 })
 export class AppModule { }
