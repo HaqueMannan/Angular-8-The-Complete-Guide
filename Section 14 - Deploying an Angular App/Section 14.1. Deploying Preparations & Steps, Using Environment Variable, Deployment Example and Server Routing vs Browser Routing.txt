@@ -1,0 +1,68 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+Deployment Preparation Steps:
+> There are a couple of steps which we should take:
+   1) Use & check environment variables
+   2) Polish (optimise) and test code
+
+> Once we have done this and are happy with our application code we can then build the project using the command:
+   ng build --prod
+> This will create a dist directory containing another folder inside named our project containing all of the bundled code.
+> After building the app we can now deploy build artefacts (generated files) to static host.
+> A static host is a webserver that is capable of serving HTML, CSS and JavaScript but is not capable of running any server side language (e.g. PHP or Node.js). An Angular app is only made up of HTML, CSS and JavaScript.
+> We can have some backend code for example we can use something like firebase or our own backend.
+> If we are only working with Angular (just building a single page application) and we are not working on a backend on our own then we only just have HTML, CSS and JavaScript and all we need for that is a webserver that is capable of serving these files.
+
+
+Using Environment Variable:
+> Environment variables is a feature built into every project we build with the Angular CLI.
+> In thr src directory we have an environments directory. In that environments directory we have two files:
+   - environment.ts
+   - environment.prod.ts
+
+> We have an exported const variable in these files where we can add key:value pairs to that variable for example if we were using an API that required some API key, we can store that API key in this variable and then import that environment variable into our file to use that API key.
+> The Angular CLI will automatically swap these two files when we build for production. This is useful because we may have certain values which may differ from development to production.
+> We can store any values here which we need in our other files and we have the option to use different values for the different environments.
+> In the AuthService we are sending requests to the firebase backend API to sign a user up or log a user in and there we are referring to API key.
+> The API key is the same for both the signing up and logging users in and therefore we could manage it in a const variable. If we were using the variable elsewhere in other files we could move the variable in both environment files.
+
+   export const environment = {
+      production: false,
+      firebaseAPIKey: 'AIzaSyDPgnKk1KgFwbU_8HJO8XeAxaE8ggfjSUE'
+   };
+
+> We can go back to the AuthService and import the environment values from our environment.ts file (only).
+
+   auth.service.ts:
+      import { environment } from '../../environments/environment'
+
+      signup(email: string, password: string) {
+         return this.http.post<AuthResponseData>(
+            'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=' + environment.firebaseAPIKey,
+            ...
+         ).pipe(...);
+      }
+
+> This will be automatically be switched out for us when we use the ng build --prod command with the production variable.
+> We can use that environment const variable in the places where we are using the API key we stored.
+> the advantage here is that we can swap values on development to production.
+
+
+Deployment Example:
+> We would use the ng build --prod command to build our production code. This command will convert our TypeScript code into JavaScript code and it also compiles all of our templates to JavaScript instructions so that in the end only JavaScript code is generated. This is JavaScript code that runs in the browser and contains all the logic for updating the DOM in the way we defined it in our multiple components and all the logic we added in the application.
+> This is all done by the bundled up application which takes advantage of the Angular framework that powers all of this.
+> All the code within the dist directory project folder is the code that makes up our application that we would need to upload to a static webserver.
+> There are many options for a static webserver provider. We can google static website hosts to find many articles and examples on where we can host such a static website.
+> Examples include: AWS3 by Amazon and Firebase Hosting (if we use Firebase Hosting we need the Firebase CLI to deploy our application).
+> We would find deployment documentation for whichever host we decide to use and should follow their guide.
+> We need to make sure that we have a server configured so that it always serves the index.html file no matter which URL we enter into the browser. The reason is because by default the server always handles the incoming request first and if that is a URL that is unknown to the server we would normally get an error. We have our Angular router handling our routes but that runs on the client i.e. the browser and only gets a chance to run if the server serves our application.
+> Therefore, any request has to reach to the server first and there they are all redirected to index.html which in the end is our starting point for the single page application. Since any request no matter which URL we entered reaches the index.html page and now the Angular application can take over any incoming requests with any URL on our server and can then use the Angular router to load the correct content in our Angular application.
+> Therefore this redirection to the index.html is an important configuration to the server.
+
+
+Server-Routing vs Browser-Routing:
+> When deploying your Angular app, it's really important to make sure that your server (like S3) is configured to always serve the index.html file.
+> How to fix broken routes after deployment:
+> Angular stores and manages your routes and not the server that’s hosting your Angular app! Keep in mind that that server only serves the index.html file - that’s about its only job!
+> The solution is simple: our server should always serve the index.html file, especially in 404 error cases!
+> If we configure our server to do just that (static hosts like AWS S3 or Firebase provide easy-to-use configurations to achieve this behaviour), our Angular app gets loaded and then has the chance to handle the request.
