@@ -1,0 +1,55 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+What is Application State?
+> Consider the below application
+
+|------------------------------------------------------------------------|   |-----------|
+|  Application State                                                     |   |  backend  |  Persistent state
+|     WelcomeComponent                                                   |   |-----------|  on Backend
+|     NewTrainingComponent-------Fetch Exercise------>TrainingService<--Store & Fetch--^ 
+|     CurrentTrainingComponent--------------Store Exercise----^          |
+|------------------------------------------------------------------------|
+
+> The TrainingService will be there to manage the core data that these different components need to work correctly. For example we could fetch new exercises and once the user is done with the exercise we can store the exercise.
+> This data is the application state and this application state is lost whenever the application refreshes i.e. when we reload the Angular app/website.
+> The entire data is managed by the service and components but all that together is just a JavaScript application in the end. The entire Angular app is compiled into a JavaScript bundle. Therefore, it is all in JavaScript and managed in memory by JavaScript and whenever the pages are reloaded the Angular app restarts and the the other app is dumped/lost and the memory is cleared. This is how JavaScript works. To solve the refreshing problem we typically work with a backend.
+> State in a nutshell can be translated to data that is important to our application and influences what is displayed on the screen e.g. loading state.
+> Any data which controls what is displayed on the screen is state.
+> Examples of state in th AppProject is the ShoppingListService which manages the ingredients through the service and the RecipesState which controls the recipes. The AuthComponent has a state for managing isLoading and isLoginMode is a state (maybe not an application wide state but is still a local state i.e. local to the component). The DataStorageService persists the storage of recipes to a server.
+> Smaller applications are OK with the way we are managing the state by using components and services and we can get very far with this approach. Even larger application can be managed through services and components.
+> However, the larger the application gets and the more complex the state gets i.e. the state relies on many components and many components rely on services and so on, we could end up in a state management nightmare i.e. the app is harder to maintain because it is hard to tell where we are managing these pieces of information.
+> The part remedy to this issue is by using RxJS. This allows us to create a streamlined state management experience using subjects. Using Subjects we can react to user events and user interfaces (i.e. react to some state changing event) by using Observables/Subjects. We can emit or next a new data and maybe use operators to transform data in the way we want it and then listen to such state changes in other parts of the application to then update the UI.
+> We are using a pattern to manage our state using Subjects/Observables which provides a clear stream of data i.e. a uni-directional stream.
+> Using RxJS and Subjects is already a good method of managing state and it may be all that we need for either small or large applications. However, it requires us to have an eye on a god structure and a clean setup to ensure all services and pieces of state are implemented in a good way. This is where NgRx steps in.
+
+
+What is NgRx?
+> The RxJS approach has its issues. We could still have an app where the state can be updated from anywhere because we failed to setup a clear flow of data. The state is (possibly) mutable i.e. the code might not require us to state the old data by overwriting it with the new data. Finally, handling side effects (e.g. Http calls) is unclear.
+> When working with larger applications and larger teams, it may become difficult to enforce best practices and specific patterns. Angular by default does not enforce a pattern.
+> Redux helps us to enforce a pattern. Redux is a state management pattern and also a library that helps to implement that pattern into any application.
+> The idea of managing the state (i.e. data) in Redux is to have one central store in our entire application that holds the entire application state. We can think this of a large JavaScript object that contains all of the data that the application needs. This can be categorised in properties and then hold nested objects but in the end it is one large data store.
+> the different parts of our application such as the services and components can still interact with each other but they receive their state from the store.The Store is the single source of truth that manages the entire application state.
+> To change the state, in the Redux world we dispatch so called actions. An Action in the end is also a JavaScript object with an identifier (the type of action) and optionally a payload (if the action needs some extra data).
+> The Action reaches a so called Reducer. A Reducer is simply a JavaScript function that gets the current state which is stored in the store and the Action as an input passed in automatically by the Redux library. The Reducer can have a look at the Action identifier to find out what kind of action it is and then perform code on the current state to update that state in an immutable way (i.e. copying the current state and then changing copied state).
+> Ultimately, the Reducer returns a new state (i.e. copy of the current state updated) and then forwarded to the application store where this reduced state is overwriting the old state object of the application.
+> This is the Redux patter (demonstrated below).
+> This enforces a clean flow of data. We only have one place in the application where we store our data and we only edit it though Actions and Reducers and we receive the state through so called subscriptions which we could setup.
+
+                     ---------------------Store (Application State)---------------------
+                     |                       ^                                         |
+                     |                       |  Saves reduced State (immutably!)       |
+                     |                       |                                         |
+                     |                    Reducers------->Reduces/Combines State       |
+                     |                       ^                                         |
+      Receive State  |                       |  Sent to                                |  Receive State
+                     |                       |                                         |
+                     |                    Actions                                      |
+                     |                       ^                                         |
+                     |           ____________|____________                             |
+                     |           |        Dispatch       |                             |
+                     |------->services<-------------->Components<------------------------
+
+
+> If we are using Angular, we could also use the Redux library as it is not restricted to be used with ReactJS only. However, NgRx in the end is Angular's implantation of Redux.
+> NgRx comes with some Angular specific things. For example it is deeply integrated into Angular, it embraces RxJS and Observables and uses TypeScript.
+> NgRx also provides us with tools that makes working with Side Effects easier. Side Effects are things like sending HTTP requests. Traditionally with Redux this was an open question and unclear where we should send such Side Effects (asynchronous code) which was always a problem. Reducers may only execute synchronous code. Therefore, it has always been an open question where we should execute asynchronous code. NgRx is shipped with an inbuilt solution.
