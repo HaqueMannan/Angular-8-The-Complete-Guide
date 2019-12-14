@@ -1,0 +1,210 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+Getting Started with Reducers:
+> To install NgRx we need to run the following command in the terminal within our project directory to install the package:
+
+   npm i --save @ngrx/store
+
+> This is the first package we would need (we would add more packages later) and this is the core package for NgRx we will need which provides us the core features to get started.
+> Once the installation is completed we can restart the Angular server by running the ng serve command in the terminal.
+> We can now get started with adding NgRx to our application.
+> The core parts we would need to get started are the Store, Reducers and the Actions. the Store and Reducers are tightly coupled together.
+> We can create a new Reducer by creating a new file with the .reducer.ts extension. This file is simply a function an we should export a function which we can give it any name we would like.
+> The important part is that this function receives two arguments of the state and action.
+> These arguments are provided automatically because we will soon add it so that it is manages by the NgRx package and this package will in the end be the part that calls this function and then pass these arguments into this reducer function.
+> The state is the current state before it is changed.
+> The action triggers the reducer and in the end the state is updated.
+> In this function we can find our what type of action it is and then update the state.
+> We can optionally setup an initial state outside of the function with default values. We would create a const variable and give is whatever name we would like and this variable value should be set to a JavaScript object.
+> The state does not have to be a JavaScript object, but for anything other than trivial apps or very specific cases it would probably be a JavaScript object as it allows us to group different data together.
+> We can set the first argument state to the const variable as its default value. We can set default values to function arguments (which is a ES6 feature) and this would mean if that function is not set or would be null otherwise, then the the value set would become the default initial state.
+> The first time the reducer will run, it will receive the initialState and for subsequent actions (after it has been initialed for the first time and it will be initialised globally by NgRx) the state will always be the previous state.
+
+   shopping-list.reducer.ts:
+      import { Ingredient } from '../../shared/ingredient.model';
+      const initialState = {
+         ingredients: [
+            new Ingredient('Apples', 5),
+            new Ingredient('Tomatoes', 10)
+         ]
+      };
+      export function shoppingListReducer(state = initialState, action) {
+      };
+
+
+Adding Logic to the Reducer:
+> Now that we have a reducer, what happens inside of that function?
+> We need to find our what kind of action was dispatched so that we know how to edit the current state.
+> To check different kinds of possible actions we would use a switch case statement.
+> On the action we need to check the .type of the action. To get better TypeScript support we can add the Action type to the action argument which is imported from @ngrx/store. This imports an Actions interface which forces any action to have a .type property which would allow us to check for it in the switch case statement.
+> We can simply register different cases i.e. action.types we want to handle.
+> The .type is the action identifier and the value is always a string. The value is entirely upto us as the developer; however, the convention is to use all UpperCase text. This will make it clear what the action will do for example ADD_INGREDIENT action type will add an ingredient.
+> We have to always return a new state. We cannot take the current state and .push new values onto it. State changes with NgRx will always have to be immutable which means we must not edit the existing or the previous state. This is a forbidden and bad practice to do so.
+> Instead we reutrn a new object which will replace the old state. To not lose all of the current/previous state data we can use the ES6 spread operator (...). The spread operator will pull out all the properties of the old state and adds these properties to the new object. Therefore, we have a new object with the old data which is a copy of the old state. If we now edit this copy it is ok to do so.
+
+   shopping-list.reducer.ts:
+      ...
+      export function shoppingListReducer(state = initialState, action: Action) {
+         switch (action.type) {
+            case 'ADD_INGREDIENT':
+               return {
+                  ...state,
+                  ingredients: [
+                     ...state.ingredients, actions
+                  ]
+               }
+            default:
+               return state;
+         }
+      };
+
+> In the above example, we could correctly say the old state was just an object with the ingredients property and so if we copy the entire previous state and we change the ingredients we do not need to copy it.
+> It is always a good practice to copy the old state because later and in other apps we will certainly have some state that consists of more than one property and then if we only change one of the properties and we forget to copy the others we would override the old state with the new state where we dumped all the properties we did not choose change and is not something we would want. Therefore, a rule of thumb is to always copy the old state and then override what we want to change.
+> In the above the ingredients is an array and to not lose the previous items in the array we would also need to copy the state.ingredients using the spread operator. We can also use the spread operator on arrays to pull out all the elements to add to our new array.
+> We add a new element to the array and we have to get this from the action somehow. The above is not the final solution but is a first step. We now need to look at how to create and dispatch actions to the reducer.
+> We should add a default case to the switch statement to handle any case that we are not explicitly handling. NgRx will not dispatch any actions we defined automatically when it starts. Instead it will dispatch an initialisation action.
+> We handle the initialisation action by using the default case which we return the unchanged state which will be the initialState.
+
+
+Understanding & Adding Actions:
+> So far we have learned how to create our first reducer and thus far NgRx is not doing anything for us.
+> The next step is to take care about the actions that we want to have (or in the above example the one action we are supporting called ADD_INGREDIENT).
+> To reliably dispatch the action in the same way by having the correct action.type identifier to rule out typos and by adding the correct payload (ingredient) that can be added, we should standardise the action creation process (i.e. how such an action would look like).
+> If we were to dispatch an action from anywhere in our code currently we would have to make sure that we typed the same identifier correctly. It is easy to make a typo in our code and this would become a bug which would be really hard to debug and we will end up spending so much hours finding the typo.
+> To rule this out NgRx kind of pushes us into the direction of having a clear pattern about creating and providing our actions as well.
+> To create an action we would create a new file in the same directory as our reducer with the actions.ts file extension.
+> We would create a subdirectory called store which will hold all of our NgRx files i.e. the actions.ts and reducer.ts files.
+> We need to be able to export our actions.type identifiers in a way that we can simply import it and we do not need to type it manually to rule out any typos.
+
+   shopping-list.actions.ts:
+      export const ADD_INGREDIENT = 'ADD_INGREDIENT';
+
+   shopping-list.reducer.ts:
+      import { ADD_INGREDIENT } from './shopping-list.actions'
+      export function shoppingListReducer(state = initialState, action: Action) {
+         switch (action.type) {
+            case ADD_INGREDIENT:
+               return {...}
+         }
+      }
+
+> We would export a const variable which we could name anything and set its value to the action.type identifier. It is recommended to use the convention of naming the variable the same as the action.type identifier name as seen above. The name should also be descriptive of what the action does.
+> We can import the action into other files like in the reducer.ts file where we need the action. Therefore, since we do not need to type it out again as we import it and the IDE will yell at us if we were to mess up the import and so we have a secure way where we rule out typos in the actions.type identifier as we are no longer using string values.
+
+   shopping-list.actions.ts:
+      import { Action } from '@ngrx/store';
+      import { Ingredient } from 'src/app/shared/ingredient.model';
+      export const ADD_INGREDIENT = 'ADD_INGREDIENT';
+      export class AddIngredient implements Action {
+         readonly type: ADD_INGREDIENT;
+         payload = Ingredient;
+      }
+
+> The next step is to export the thing that describes our action. We export a class since the action is an object and the class should have a descriptive name written in PascalCase but should belong to the action.
+> The class should implement the Actions interface that we are importing from @ngrx/store.
+> This interface now forces us to structure the class in a certain way. We now need a type property in our class. The type is the identifier of this action. This is set to the variable which holds our string value.
+> We add the readonly annotation which is a TypeScript feature which indicates to TypeScript that this property must never be changed from outside the class. If we try to do this anywhere in our code we will get an error, thus, enhancing type safety and ensures we do not mess up with our pattern.
+> In the above example, the action needs more than the type, it also needs the ingredient that should be added. We can add more properties to our action for example the payload. The payload is set to our Ingredient interface file which we also need to import.
+> Note: payload is not a name we have to use! The Action interface only forces us to add a type property!
+> We have now completed our action definition. We can go back to our reducer to extract the payload from the action object.
+
+   shopping-list.reducer.ts:
+      import * as shoppingListActions from './shopping-list.actions'
+      export function shoppingListReducer(state = initialState, action: ShoppingListActions.AddIngredient) {
+         switch (action.type) {
+            case ShoppingListActions.ADD_INGREDIENT:
+               return {
+                  ...state,
+                  ingredients: [
+                     ...state.ingredients,
+                     actions.payload
+                  ]
+               }
+         }
+      }
+
+> Since we are exporting more than the variable from our action.ts file we can import everything from that file in our reducers.ts file by using the asterisk (*) and then using the as keyword provide an alias to group all the things that are imported from the file into one object under which we can access them from.
+> We can now also be specific about the action argument we are getting back in our reducer by setting its type to the ShoppingListActions.AddIngredient class. We can then get rid of the Action interface import from @ngrx/store within our reducer file.
+> When we want to add a new ingredient it is not just an action, instead our action now has a payload property. We get autocompletion with TypeScript support because we are clear about the type of our action.
+
+
+Setting Up the NgRx Store:
+> To add an application store we need to go to our app.module.ts file and import the StoreModule from @ngrx/store. This will help setting up the application wide ngrx store. This is an Angular Module and therefore we should also add it to the @NgModule decorator imports array.
+
+   app.module.ts:
+      import { StoreModule } from '@ngrx/store'
+      import { shoppingListReducer } from './shopping-list/store/shopping-list.reducer';
+      @NgModule({
+         imports: [
+            StoreModule.forRoot({ shoppingList: shoppingListReducer }),
+         ],
+      })
+
+> We need to tell the StoreModule what makes up our store i.e. what reducers are involved. We call on .forRoot and we pass an action:reducer map which is simply a JavaScript object where we can define any identifier of our choice and then the reducer that belongs to that identifier.
+> The reducer function must also be imported into our app.module.ts file.
+> This function is now registered to the key. In the above example the shoppingListReducer is registered to the shoppingList key. The key name is totally up to us to choose but it should be descriptive about which feature of the application the reducer belongs to.
+> When the application now starts, even though we do not see it as of yet, NgRx will take the reducer into account and setup an application store for us where it registers the reducer so that any actions are dispatched will reach that reducer.
+> To see the initial application state we can now start fetching some data from the state.
+
+
+Selecting State:
+> With the StoreModule registered in the app.module.ts file and it being connected to our shoppingListReducer, we finally get NgRx going.
+> To use the state in our component, we need to inject our application store in the constructor. The type for the injector is important which is of the type Store and this needs to be imported from  @ngrx/store.
+
+   shopping-list.reducer.ts:
+      import { Ingredient } from '../../shared/ingredient.model';
+      const initialState = {
+         ingredients: [
+            new Ingredient('Apples', 5),
+            new Ingredient('Tomatoes', 10)
+         ]
+      };
+
+   shopping-list.component.ts:
+      import { Store } from '@ngrx/store';
+      export class ShoppingListComponent implements OnInit, OnDestroy {
+         ingredients: Ingredient[];
+         constructor(private store: Store<{ shoppingList: { ingredients: Ingredient[] } }>) { }
+
+         ngOnInit() {
+            this.store.select('shoppingList');
+         }
+      }
+
+> The Store is a generic type and we need to describe how our application store looks like using the angled brackets (<>). This is the structure we setup in our app.module.ts file i.e. the action:reducer map object we setup in the .forRoot method.
+> Our type is in the end a description of the different parts we have in the store.
+> We use a JavaScript object where we pass in the key which has to be the name we chose in the app.module.ts file and the type of the data stored in that key is now not our reducer function but what the reducer function yields.
+> In the above example the reducer yields the type object with an ingredients key where this key holds an array of Ingredient. This needs to be typed correctly matching what is in the reducer.ts file.
+> With the store injected we can now use the store to get access to our ingredients that are stored in that store.
+> The injected store object we have a select method which helps us to select a slice of our state. That slice is identified as a string and we should automatically get type support in our IDE. TypeScript knows this because we defined the store type in the constructor of the type of data it will return.
+> In the above example we are now selecting the shoppingList key of our global store.
+> This actually provides us an observable and we can store the observable in a variable. Therefore, we need to import Observable from rxjs and set the ingredients property in our component to an Observable to remove TypeScript errors.
+
+   shopping-list.component.ts:
+      import { Subscription, Observable } from 'rxjs';
+      import { Store } from '@ngrx/store';
+      export class ShoppingListComponent implements OnInit, OnDestroy {
+         ingredients: Observable<{ ingredients: Ingredient[] }>;
+         constructor(private store: Store<{ shoppingList: { ingredients: Ingredient[] } }>) { }
+
+         ngOnInit() {
+            this.ingredients = this.store.select('shoppingList');
+         }
+      }
+
+> Observable is a generic type which we need to describe what the Observable would look like. In the end the Observable will yield an object with an ingredients array which would then hold an array of ingredient.
+> We know that we get the data in this format in our Observable because that is the data format of our Store i.e. the inner part of shoppingList key is holding the data format for our Observable.
+> We do not need to manage the NgRx subscription because this is handled by Angular in the background for us.
+> Our ingredients property on our component class is now an Observable and no longer an array of ingredients which will break our component template because we look through ingredients which only works with arrays and not an observable.
+> Angular has us covered in this case as we can use the async pipe
+
+   shopping-list.component.html:
+      <a *ngFor="let ingredient of (ingredients | async).ingredients; let i = index">...</a>
+
+> Angular will subscribe to ingredients for us and will therefore manage the subscription for us. Angular will ultimately provide us (once it has resolved the asynchronous code and gets the value(s) from the rxjs Observable) ingredients which is an array that we can loop through.
+> The template should work correctly without throwing any errors and we should see the ingredients in our initial state (since the default case would be triggered in the reducer to return the unchanged state on the NgRx initialisation action).
+
+
+Conclusion:
+> We now have learned how to get the general setup for our store, reducers and actions with NgRx.
+> The last missing piece is to dispatch actions where we have the whole NgRx all setup to dive deeper.
