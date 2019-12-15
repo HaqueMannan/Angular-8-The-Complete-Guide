@@ -1,0 +1,262 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+Expanding the State:
+> We will notice when implementing the UPDATE_INGREDIENT action that our application behaves strangely. We are able to update the ingredient, however, if we update the ingredient again, the edit form is populated with the previous ingredient's values rather than the values that is currently displayed on the user interface.
+> The reason for this is because in the shopping-edit.component.ts file we are still using the ShoppingListService to get the ingredients stored in the ShoppingListService to populate the edit form rather than from the NgRx store which holds the true upto date data.
+> We also use the ShoppingListService to control whether we are editing or not. We actually start the editing process from inside of the shopping-list.component.ts file and not from inside of the shopping-edit.component.ts file.
+> To translate this into the NgRx world, it would make more sense if we dispatch an action in the shopping-list.component.ts file to start editing (NgRx will use a Subject behind the scenes to inform our entire application about that event). Then in the shopping-edit.component.ts file we can simply listen to our store and see if we started editing and then run the same kind of logic we currently have in the file i.e. pass the index of the edited ingredient and when we get the index we also want to get the ingredient from our NgRx store.
+> To implement this in an easy to use way, we can go into our ShoppingList Reducer and change the state as we need more than just the ingredient.
+
+Before:
+   shopping-list.reducer.ts:
+      const initialState = {
+         ingredients: [ new Ingredient('Apples', 5), new Ingredient('Tomatoes', 10) ]
+      };
+
+After:
+   shopping-list.reducer.ts:
+      const initialState = {
+         ingredients: [ new Ingredient('Apples', 5), new Ingredient('Tomatoes', 10) ],
+         editedIngredient: null,
+         editedIngredientIndex: -1
+      };
+
+> For our ShoppingList to effectively update the different parts of our application that are involved here we also want to store the editedIngredient which is of the type Ingredient which we will set its initial value to null and also the editedIngredientIndex which is of the type number which we will set to -1 as the default values (we do not use 0 because this would be a valid index hence we use -1 which is not a valid index).
+> We now have two new members/fields in our initial state.
+> Now that we have changed the structure of our state and this will cause a problem because we have different parts of our application such as the shopping-list.component.ts where we inject the store, we share a footprint/definition of the data in our store (i.e. how the data in our store looks like).
+> This would be pretty cumbersome if we now have to change every area of our application which injects the store with the new state definitions.
+> To implement a simpler pattern which enforce the DRY principles which makes it easier to manage and more convenient. In our .reducer.ts file we can export an interface to create our own Type definition which will describe how our state for this reducer would look like.
+
+   shopping-list.reducer.ts:
+      export interface State {
+         ingredients: Ingredient[];
+         editedIngredient: Ingredient;
+         editedIngredientIndex: number;
+      }
+      const initialState: State = {...}
+      export function shoppingListReducer(state: State = initialState, action: ShoppingListActions.ShoppingListActions) {...}
+
+> We know that the initial state will be of the type we created and therefore we can set the variable type to our interface to enforce the Type and make it clear.
+> With that state interface defined in our reducer, we can now use that state interface in whichever component files that injects our store for example the shopping-list.component.ts file.
+> We can take this further; in the future we will have multiple reducers and then this ShoppingList is part of our global state. In the app.module.ts file the shoppingListReducer is registered under the shoppingList key and in the place where we do inject our store we also reference the shoppingList key as well.
+> Since we are merging our own states into the object, we can export another interface to describe the application wide state and not just the state for this reducer. This would be the key and its type will hold a reference to our state export.
+
+   shopping-list.reducer.ts:
+      export interface State {...}
+      export interface AppState {
+         shoppingList: State;
+      }
+   
+   shopping-list.component.ts:
+      import * as fromShoppingList from '../shopping-list/store/shopping-list.reducer';
+      export class ShoppingListComponent implements OnInit, OnDestroy {
+         constructor(private store: Store<fromShoppingList.AppState>) { }
+      }
+
+> We are now clear that our entire application state is about an object which has a shoppingList key/area where it then in turn we have data of the interface State type.
+> We can now go to the different places where we inject Store and then reference this AppState. We would need to import everything from our reducer file and setting an alias starting with from followed by the key name e.g. fromShoppingList.
+> The alias is just a convention which can be found in the official NgRx documentation which typically describes the import to our reducer and/or our state for a certain part of our application.
+> We use the fromShoppingList.AppState which will describe our whole application state as it is seen from inside of the shoppingList reducer.
+> Our AppState might have more than just the shoppingList, but from the shoppingList reducer's point of view and what the component is interested in, it defines how the shoppingList reducer state would look like.
+> We now have a better type definition for our state that is more flexible as we are now able to update the state in a single location and it will be applied to all the places where we inject that store and TypeScript will know what is inside of that store.
+
+
+Managing More State via NgRx:
+> To solve the issue described at the top, we need to add more actions which will manage the starting of editing ingredient process and also for cancelling/stopping it. We would do this in the .actions.ts file.
+
+   shopping-list.actions.ts:
+      export const START_EDIT = 'START_EDIT';
+      export const STOP_EDIT = 'STOP_EDIT';
+      export class StartEdit implements Action {
+         readonly type = START_EDIT;
+         constructor(public payload: number) {}
+      }
+      export class StopEdit implements Action {
+         readonly type = STOP_EDIT;
+      }
+      export type ShoppingListActions =
+         ...
+         | StartEdit
+         | StopEdit;
+
+> The StopEdit does not require a payload because we just want to reset the editedIngredient and the editedIngredientIndex to their initial values. The StartEdit requires a payload because we need to know which ingredient we are editing. These new actions should also be added to the union action type so that TypeScript is aware of these available actions in the shoppingListReducer.
+> On the shoppingListReducer we now have two new cases to handle the StartEdit and StopEdit actions. In both cases we need to return a new object. The StartEdit will use the action.payload to set the editedIngredient and editedIngredientIndex while the StopEdit will reset these values to the initial state.
+> It is now more important than ever to copy our existing state as we have more fields than just the ingredients or the editedIngredient/editedIngredientIndex. If we do not copy the state first in the new state value we will lose the other fields with the new values set.
+
+   shopping-list.reducer.ts:
+      export function shoppingListReducer(state: State = initialState, action: ShoppingListActions.ShoppingListActions) {
+         switch (action.type) {
+            ...
+            case ShoppingListActions.START_EDIT:
+               return {
+                  ...state,
+                  editedIngredientIndex: action.payload,
+                  editedIngredient: { ...state.ingredients[action.payload] }
+               };
+            case ShoppingListActions.STOP_EDIT:
+               return {
+                  ...state,
+                  editedIngredient: null,
+                  editedIngredientIndex: -1
+               };
+            default: return state;
+         }
+      }
+
+> Now that we have the actions and reducers created, we can use them to dispatch the actions from our various component files to now implement the NgRx state rather than the ShoppingListService state.
+
+   shopping-list.component.ts:
+      import * as ShoppingListActions from './store/shopping-list.actions';
+      export class ShoppingListComponent implements OnInit, OnDestroy {
+         onEditItem(index: number) {
+            this.store.dispatch(new ShoppingListActions.StartEdit(index));
+         }
+      }
+
+   shopping-edit.component.ts:
+      import * as ShoppingListActions from '../store/shopping-list.actions';
+      export class ShoppingEditComponent implements OnInit, OnDestroy {
+         subscription: Subscription;
+         editMode = false;
+         editedItemIndex: number;
+         editedItem: Ingredient;
+
+         ngOnInit() {
+            this.subscription = this.store.select('shoppingList').subscribe(stateData => {
+               if(stateData.editedIngredientIndex > -1) {
+                  this.editMode = true;
+                  this.editedItem = stateData.editedIngredient;
+                  this.shoppingListForm.setValue({
+                     name: this.editedItem.name,
+                     amount: this.editedItem.amount
+                  });
+               } else {
+                  this.editMode = false;
+               }
+            })
+         }
+         onClear() {
+            this.shoppingListForm.reset();
+            this.editMode = false;
+            this.store.dispatch(new ShoppingListActions.StopEdit());
+         }
+         ngOnDestroy() {
+            this.subscription.unsubscribe();
+            this.store.dispatch(new ShoppingListActions.StopEdit());
+         }
+      }
+
+> When we edit an ingredient, instead of using the ShoppingListService, we would now use our store and select the shoppingList key slice from our store and then set our own subscription (rather than using the async pipe in the template file) which we can do as it is an Observable.
+> We get our shoppingList relevant state data for this part of the store. In this subscription we want to then use the data.
+> We are now initialising the shoppingListForm with the data from the editedItem which we get from NgRx and now the NgRx flow is complete. We dispatch the start and stop edit actions and we also now get the data for editing an ingredient from NgRx. Once we are done we are also dispatching our update action back to the NgRx. We now have everything managed with NgRx which solves/fixes the issue mentioned above.
+> We should manage our subscription on our own to ensure there is no memory leaks.
+
+
+Removing Redundant Component State Management:
+> We will notice the application is not displaying the updated ingredient correctly after the above changes and the problem is because in the actions we are dispatching such as the UpdateIngredient, we are referring to the this.editedItemIndex.
+> We do have this property in our component, but we are not setting it when we start editing.
+> There are two solutions.
+
+Solution 1:
+   shopping-edit.component.ts:
+      import * as ShoppingListActions from '../store/shopping-list.actions';
+      export class ShoppingEditComponent implements OnInit, OnDestroy {
+         subscription: Subscription;
+         editMode = false;
+         editedItemIndex: number;
+         editedItem: Ingredient;
+
+         ngOnInit() {
+            this.subscription = this.store.select('shoppingList').subscribe(stateData => {
+               if(stateData.editedIngredientIndex > -1) {
+                  this.editMode = true;
+                  this.editedItem = stateData.editedIngredient;
+                  this.editedItemIndex = stateData.editedIngredientIndex;
+                  ...
+               } else { this.editMode = false; }
+            })
+         }
+      }
+
+> We could set the this.editedItemIndex to the stateData.editedIngredientIndex value. This will fix the deleting and updating the ingredient in our application.
+> However, this solution is a little Redundant because we are extracting data from the store which we then need in the store again to update our data just to manage it in a component.
+
+Solution 2:
+   shopping-edit.component.ts:
+      import * as ShoppingListActions from '../store/shopping-list.actions';
+      export class ShoppingEditComponent implements OnInit, OnDestroy {
+         subscription: Subscription;
+         editMode = false;
+         editedItem: Ingredient;
+
+         ngOnInit() {
+            this.subscription = this.store.select('shoppingList').subscribe(stateData => {
+               if(stateData.editedIngredientIndex > -1) {
+                  this.editMode = true;
+                  this.editedItem = stateData.editedIngredient;
+                  ...
+               } else { this.editMode = false; }
+            })
+         }
+      }
+
+> We could get rid of the editedItemIndex property altogether from our component and also remove it from the places where pass that information.
+> We already know which data we manage in the store i.e. which data we are currently editing. We are already managing this in our NgRx store as we have the editedIngredientIndex in our .reducer.ts file.
+> We can update our actions a little bit. For Updating and Deleting actions we do not need the index anymore. We could still get it but we really don't need it.
+> So for Updating, our payload is really just the Ingredient and for deleting we need no data at all as we already know which ingredient we are updating/deleting.
+> We also need to change the logic in our reducer as we now only need the action.payload for our update case. When we need the index we just use the state.editedIngredientIndex value.
+
+   shopping-list.actions.ts:
+      export class UpdateIngredient implements Action {
+         readonly type = UPDATE_INGREDIENT;
+         constructor(public payload: Ingredient) {}
+      }
+      export class DeleteIngredient implements Action {
+         readonly type = DELETE_INGREDIENT;
+      }
+   
+   shopping-list.reducer.ts:
+      export function shoppingListReducer(state: State = initialState, action: ShoppingListActions.ShoppingListActions) {
+         switch (action.type) {
+            case ShoppingListActions.UPDATE_INGREDIENT:
+               const ingredient = state.ingredients[state.editedIngredientIndex];
+               const updatedIngredient = {
+                  ...ingredient,
+                  ...action.payload
+               };
+               const updatedIngredients = [...state.ingredients];
+               updatedIngredients[state.editedIngredientIndex] = updatedIngredient;
+
+               return {
+                  ...state,
+                  ingredients: updatedIngredients,
+                  editedIngredientIndex: -1,
+                  editedIngredient: null
+               };
+            case ShoppingListActions.DELETE_INGREDIENT:
+               return {
+                  ...state,
+                  ingredients: state.ingredients.filter((ingredient, index) => {
+                     return index !== state.editedIngredientIndex;
+                  }),
+                  editedIngredientIndex: -1,
+                  editedIngredient: null
+               };
+         }
+      }
+
+> One addition is to also change the editMode after we update by setting the editedIngredientIndex to -1 and the editedIngredient to null. We would also apply this to the delete case. This is because these two actions will also stop the editing process.
+> This would mean in our shopping-edit.component.ts file we UpdateIngredient we just forward the newIngredient which is no longer part of an object.
+
+   shopping-edit.component.ts:
+      import * as ShoppingListActions from '../store/shopping-list.actions';
+      export class ShoppingEditComponent implements OnInit, OnDestroy {
+         onSubmit(form: NgForm) {
+            ...
+            if (this.editMode) {
+               this.store.dispatch(new ShoppingListActions.UpdateIngredient(newIngredient));
+            } else {...}
+         }
+      }
+
+> We now have a working application where the application user interface is now updated correctly behind the scenes and we have a little bit of a leaner code where we do not manage too much of the redundant data in our shopping-edit.component.ts file.
