@@ -1,0 +1,131 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+Manually Subscribing to the Store:
+> We can manually subscribe to the store as the store simply returns an Observable:
+
+   shopping-list.component.ts:
+      export class ShoppingListComponent implements OnInit, OnDestroy {
+         private ingredientChangeSubject: Subscription;
+         ngOnInit() {
+            this.ingredientChangeSubject = this.store.select('shoppingList').subscribe();
+         }
+      }
+
+> NgRx and Angular should also clear the subscription for us but to be really safe it is recommended to store this in a subscription property and try to clear it manually to avoid any memory leak and bugs.
+
+
+Dispatching Actions:
+> The shopping-edit.component.ts file contains the two functions when we are done submitting the form to either updateIngredient or addIngredient. These are the two places where we change our ingredients displayed and therefore are the two places where we change the shoppingList state and so should change the store.
+> To dispatch an action we need to use the Store service. In the shopping-edit.component.ts constructor we need to inject the Store and import it from @ngrx/store.
+
+   shopping-edit.component.ts
+      import { Store } from '@ngrx/store';
+      import * as ShoppingListActions from '../store/shopping-list.actions';
+      export class ShoppingEditComponent implements OnInit, OnDestroy {
+         constructor(private store: Store<{ shoppingList: { ingredients: Ingredient[] } }>) { }
+         onSubmit(form: NgForm) {
+            const value = form.value;
+            const newIngredient = new Ingredient(value.name, value.amount);
+
+            if(this.editMode) {...} else {
+               this.store.dispatch(new ShoppingListActions.AddIngredient());
+            }
+         }
+      }
+
+> The Store is a generic type which we need to define what type of data is stored in that store.
+> With the store injected we can now use it in the places where we want to dispatch an action.
+> We have a dispatch method which we use to dispatch an action. The actions are defined in the .action.ts file.
+> We should import everything from our action.ts file and set an alias for the import. We can dispatch a new object based on the AddIngredient class which is based in our alias import.
+> This class has a type and a payload.
+> It would be nice if we could pass the payload as an argument to the constructor. This is possible by simply editing the action class in the action.ts file. So instead of adding payload as a property, we can add a constructor function to set the payload argument of the type Ingredient.
+
+   shopping-list.actions.ts:
+      ...
+      export class AddIngredient implements Action {
+         readonly type = ADD_INGREDIENT;
+
+         constructor(public payload: Ingredient) {}
+      }
+
+> We use the public keyword to let TypeScript know that we can have access to this property in our reducer.ts file where we are extracting it to store that ingredient in the ingredients array.
+> In the shopping-edit.component.ts file we can now pass the ingredients which we want to create/add to the AddIngredient class constructor which we are calling with the new keyword. 
+
+   shopping-edit.component.ts
+      this.store.dispatch(new ShoppingListActions.AddIngredient(newIngredient));
+
+> We pass in newIngredient variable which stores the new ingredient we want to add to our ingredients array. We are now taking advantage of our action class. This will now dispatch this action to our store.
+> Therefore the flow is as soon as we add a new ingredient we dispatch the action (AddIngredient) which is clearly defined in the action.ts file to the NgRx store (we only have one store in the whole application which is aware of the reducer as defined in the app.module.ts file) and so the action automatically reaches all the reducers that the store knows and in that reducer, the action is passed in as the second argument and now we can check the different types of actions defined in the switch case statement and then react appropriately.
+> Therefore, with this all in place we should be able to add a new ingredient to our Shopping List ingredients array and see an update on the screen.
+> We are using NgRx end to end for displaying and adding ingredients (plural).
+
+
+Multiple Actions:
+> We can add multiple cases to our reducer. Below is an example adding multiple ingredients.
+> First we need to go into our .actions.ts file to add a new action class.
+
+   shopping-list.actions.ts
+      export const ADD_INGREDIENT = 'ADD_INGREDIENTS';
+      export class AddIngredients implements Action {
+         readonly type = ADD_INGREDIENT;
+         constructor(public payload: Ingredient[]) {}
+      }
+
+> We would export a const variable which is the string identifier but we would also need to export the action class as well. Again the class will have a property of type which is readonly and will be set to the const variable. The class will also get a constructor which will now not take a single ingredient but multiple.
+> Again we will store a public payload property and the value will be the type of Ingredient array.
+> Now that we export these new classes, we can go back into our .reducer.ts file to handle that case.
+
+   shopping-list.reducer.ts
+      export function shoppingListReducer(state = initialState, action: ShoppingListActions.AddIngredient) {
+         switch (action.type) {
+            case ShoppingListActions.ADD_INGREDIENT: return {...};
+            case case ShoppingListActions.ADD_INGREDIENTS: 
+               return { }
+            default: return state;
+         }
+      }
+
+> To avoid TypeScript errors we can no longer set the action to ShoppingListActions.AddIngredient because we now have multiple actions classes in our action.ts file.
+> The solution is to export an additional type in our .action.ts file:
+
+      shopping-list.actions.ts:
+      ...
+      export type ShoppingListActions = AddIngredient | AddIngredients;
+
+> The exported type value is a combination of all the types we want to include into our actions i.e. a union of the different actions types we want to support in this part of our store. In the above case this would include the union of AddIngredient and AddIngredients separated by a pipe (|) symbol.
+> This is a TypeScript feature which simply says the type of ShoppingListActions is AddIngredient or AddIngredients (one of the two) and we export our own type to summarise this. This is a pure TypeScript thing but during development it will help us.
+> In our reducer.ts file our action is now the type of ShoppingListActions.ShoppingListActions whereby the first ShoppingListActions is the alias we are using for our import and the .ShoppingListActions refers to the exported union type.
+
+   shopping-list.reducer.ts
+      export function shoppingListReducer(state = initialState, action: ShoppingListActions.ShoppingListActions) {
+         switch (action.type) {
+            case ShoppingListActions.ADD_INGREDIENT: return {...};
+            case case ShoppingListActions.ADD_INGREDIENTS: 
+               return {
+                  ...state,
+                  ingredients: [
+                     ...state.ingredients, ...action.payload
+                  ]
+               };
+            default: return state;
+         }
+      }
+
+> TypeScript now knows that our action is either of the two type and we no longer get any errors.
+> Again we return a copy of our current state using the spread operator, we then want to change the ingredients array and we copy the existing ingredients using the spread operator. 
+> We do not want to return the action.payload as this is already an array which will then cause a nesting of array within an array. We want to add the elements of the action.payload to the outer array and therefore we should also use the spread operator to pull the elements from the action.payload our of the action.payload array and add them to the ingredients array.
+> Now that the actions and reducer are updated, we can now use new action and dispatch it when we add ingredients from a recipe. We would need to update the recipes.service.ts file to inject the store and in the addIngredientsToShoppingList function dispatch our AddIngredients action to update the store which is now the new area which holds the true state of our application and no longer the service.
+
+   recipe.service.ts:
+      import { Store } from '@ngrx/store';
+      import * as ShoppingListActions from '../shopping-list/store/shopping-list.actions'
+      @Injectable()
+      export class RecipeService {
+         constructor(private store: Store<{ shoppingList: { ingredients: Ingredient[] } }>) {}
+
+         addIngredientsToShoppingList(ingredients: Ingredient[]) {
+            this.store.dispatch(new ShoppingListActions.AddIngredients(ingredients));
+         }
+      }
+
+> We now have a actions and reducer file with multiple actions that we can now dispatch in our other files to update the global store of our application.

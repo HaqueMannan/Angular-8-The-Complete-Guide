@@ -40,7 +40,7 @@ Adding Logic to the Reducer:
 > We can simply register different cases i.e. action.types we want to handle.
 > The .type is the action identifier and the value is always a string. The value is entirely upto us as the developer; however, the convention is to use all UpperCase text. This will make it clear what the action will do for example ADD_INGREDIENT action type will add an ingredient.
 > We have to always return a new state. We cannot take the current state and .push new values onto it. State changes with NgRx will always have to be immutable which means we must not edit the existing or the previous state. This is a forbidden and bad practice to do so.
-> Instead we reutrn a new object which will replace the old state. To not lose all of the current/previous state data we can use the ES6 spread operator (...). The spread operator will pull out all the properties of the old state and adds these properties to the new object. Therefore, we have a new object with the old data which is a copy of the old state. If we now edit this copy it is ok to do so.
+> Instead we return a new object which will replace the old state. To not lose all of the current/previous state data we can use the ES6 spread operator (...). The spread operator will pull out all the properties of the old state and adds these properties to the new object. Therefore, we have a new object with the old data which is a copy of the old state. If we now edit this copy it is ok to do so.
 
    shopping-list.reducer.ts:
       ...
@@ -93,7 +93,7 @@ Understanding & Adding Actions:
 
    shopping-list.actions.ts:
       import { Action } from '@ngrx/store';
-      import { Ingredient } from 'src/app/shared/ingredient.model';
+      import { Ingredient } from '../../shared/ingredient.model';
       export const ADD_INGREDIENT = 'ADD_INGREDIENT';
       export class AddIngredient implements Action {
          readonly type: ADD_INGREDIENT;
