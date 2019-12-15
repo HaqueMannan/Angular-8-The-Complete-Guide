@@ -1,0 +1,14 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+First Summary of NgRx:
+> We added NgRx to our application by including the StoreModule and calling .forRoot() within our app.module.ts file. The .forRoot then needs a map (an object) that tells NgRx which reducers we have in our application because all these reducers and the state that they generate make up the store of this application (i.e. makes up the NgRx store). We add a feature for that with an identifier/key of our choice and then set its value to the reducer for that feature.
+
+> The Reducer is just a function. The important thing about the reducer function is that NgRx will automatically pass in the current state and an action it received. It will execute the function whenever a new action is received and then this function executes and gets both the current state and the action that was received. In the reducer we use a switch case statement where we check the type of action we got because an action is really a JavaScript object with a type property. Depending on the type we return a new state. This is how a reducer function always works i.e. data in and data out. There is no asynchronous code and it is all synchronous and we always return a new object which will be used to replace the old state for the part of the application feature. This return state is what NgRx will in the end register for the feature slice of the overall AppState of the application store it manages.
+
+> The Action defines unique identifier for all our actions which are simply strings that identify each action. These strings are stored in a const variable to prevent typos in our code. The action itself is not just the identifier but it is a complete object based on classes we define in the actions.ts file. Each action implements the Actions interface which forces it to have a type property where we store the string identifier for the action but in addition we might optionally also have a payload i.e. a property which can be set to attach data to that action.
+
+> There is really a lot of work of adding a reducer, actions, injecting the store, dispatching actions, etc. which is a lot of overhead work and using the Services as statement management was a lot easier.
+> Therefore using a Service with Subjects is more than fine alternative to using NgRx.
+> However, once we have gone through the initial setup and we have NgRx going, it is pretty easy to add new actions and new state slices; thus, it is really easy to grow our state and to manage everything in our application with NgRx.
+> It is always upto us as developers whether we wish to use either NgRx or Services/Subjects.
+> If we implement NgRx, we can get rid of the Services files and remove the code where we inject the services. The application should continue to work as before but now powered by NgRx.

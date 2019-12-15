@@ -67,8 +67,6 @@ export class AuthComponent implements OnDestroy {
    }
 
    private showErrorAlert(message: string) {
-      // const alertCom() = new AlertComponent();        // This does not work with Angular as angular needs to wire up the component itself.
-
       const AlertComponentFactory = this.componentFactoryResolver.resolveComponentFactory(AlertComponent);
       const hostViewContainerRef = this.alertHost.viewContainerRef;
 
