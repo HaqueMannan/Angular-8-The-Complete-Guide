@@ -1,0 +1,58 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+One Root State:
+> We can add more slice of state to our NgRx StoreModule by updating the app.module.ts file. For example we can add a authentication state slice to our store. We do this by adding another key:value pair where the key is the name of the slice and the value is the reducer that relates to the slice.
+
+   app.module.ts:
+      import { authReducer } from './auth/store/auth.reducer';
+      @NgModule({
+         imports: [
+            StoreModule.forRoot({ shoppingList: shoppingListReducer, auth: authReducer }),
+         ],
+      })
+
+> We initialise our global NgRx store even if we have different parts of our application with different state and reducers. We set the global store by pointing at the different parts that make up the overall store.
+> The AppState interface does not belong to the shopping-list.reducer.ts file because the AppState is more than just shoppingListReducer. If we only had the shoppingListReducer then this would be OK, but we can have more stores.
+> We would create a store directory within each feature directory containing the actions and reducers for each feature. We would also now have a global store directory which will hold a global state i.e. a app.reducer.ts file.
+> The idea of the app.reducer.ts file is to merge all our other reducers together. We would import everything from our reducer files into this global AppReducer.
+
+   app.reducer.ts:
+      import { ActionReducerMap } from '@ngrx/store';
+      import * as fromShoppingList from '../shopping-list/store/shopping-list.reducer';
+      import * as fromAuth from '../auth/store/auth.reducer';
+
+      export interface AppState {
+         shoppingList: fromShoppingList.State;
+         auth: fromAuth.State;
+      }
+
+   app.module.ts:
+      import * as fromApp from './store/app.reducer';
+      @NgModule({
+         imports: [
+            StoreModule.forRoot(appReducer),
+         ],
+      })
+
+> This allows us to create an interface file within our global store file adding a key which matches the key defined in our app.module.ts file followed by a value which points to the reducer's state export.
+> We are now importing these sub-states of parts of our global store and we merge them together to one AppState interface.
+> We create a new const reducer which will be of the type of ActionReducerMap which needs to be imported from @ngrx/store.
+> The StoreModule.forRoot in our app.module.ts file takes in such a ActionReducerMap i.e. the object we create in there is a ActionReducerMap. So instead of creating it in our app.module.ts file, we now do this in the app.reducer.ts file.
+> This allows us to structure the code in a much cleaner way. This is the one state we have in the entire application and we create it by bringing it together with all of the individual slices we have that make up the global state.
+> The ActionReducerMap is a generic type which we need to define which will be the AppState. This object will contain the same structure as the AppState but we would point to the exported reducer function.
+> In the app.module.ts file we no longer need to create the object, instead we now import everything from the app.reducer.ts file and in the forRoot we pass in the appReducer.
+> We would now update all the components which imports the store and redefine the type.
+
+   shopping-list.components.ts:
+      import * as fromApp from '../store/app.reducer';
+      export class ShoppingListComponent implements OnInit, OnDestroy {
+         constructor(private store: Store<fromApp.AppState>) { }
+
+         ngOnInit() {
+            this.ingredients = this.store.select('shoppingList');
+         }
+      }
+
+> We would import the app.reducer and replace the type to fromApp.AppState which will now give us access to the overall state where we would still have a e.g. shoppingList slice.
+> The IDE should kick in and allow us to access any part/slice of the store (in the above case we have two slices in our overall state i.e. auth and shoppingList).
+> Everything should now compile and work as it did before but now with a root state file. This is just some restructuring to have a cleaner code structure and have a store that works with multiple state slices.
