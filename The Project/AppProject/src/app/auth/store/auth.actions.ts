@@ -8,7 +8,7 @@ export class Login implements Action {
 
    constructor(public payload: {
       email: string,
-      userID: string,
+      userId: string,
       token: string,
       expirationDate: Date }
    ) {}
