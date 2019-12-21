@@ -1,0 +1,21 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+> In the reducer file we have a default return switch case which is important for initialising the state.
+> When NgRx starts up via initialising the StoreModule in our app.module.ts file, it essentially sends one initial action to all reducers. Since we have no prior state when the first action is emitted we take the initial state.
+> This initial action dispatched automatically reaches all reducers. This is not just the case for the initial action. Any action we dispatch (by calling .dispatch) including our own ones will always reach all reducers.
+> This has important implications and is even more important that we always copy the old state and really important that we return the default state in the default case.
+> This is because if a shopping-list related action is dispatch, it will still reach the AuthReducer and so in there we have no case to handle that action and therefore the default case will kick in and handle this for us. In there we absolutely have to return our current state otherwise we would lose that state and cause an error.
+> The slices are managed on a per global slice level. Therefore, the AuthReducer is only responsible for its state which has a User property while the shoppingListReducer only cares about its state but actions reaches all reducers and therefore it is important we return the default state for the state slice. If we return null we would end up dropping our state slice when something is dispatched in another area of the app.
+> Since our dispatch reaches all reducers we need to ensure our action identifiers are unique across the entire application. A technique to ensure the action identifiers are unique for the entire application is to use the prefixing technique.
+> In the prefixing technique we add one piece of extra information to truly make our actions unique. In NgRx we typically use square brackets and then add the name of the feature that we are dealing with for example:
+
+   shopping-list.actions.ts:
+      export const ADD_INGREDIENT = '[Shopping List] ADD_INGREDIENT';
+
+   or
+
+   shopping-list.actions.ts:
+      export const ADD_INGREDIENT = '[Shopping List] Add Ingredient';
+
+> After the square brackets we can use the normal upper case notation or regular case for the action identifiers. The latter example is used in the official NgRx documentation.
+> We only change the values we store in the const variable but we keep the const values in upper case.
