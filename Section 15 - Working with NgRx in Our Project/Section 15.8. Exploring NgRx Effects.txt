@@ -1,0 +1,18 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+> Side Effects are parts in our code where we run some logic that is important for our application but it is not important for the immediate update of the current state.
+> For example, in our AuthService we have a http request for signup whereby the result of the request matters because it decides whether we successfully created a new user. However, for the process where we start to signup process the http request is not important. We can basically split our signup into to actions i.e. start signup and signup success as an example (possibly three if we include the signup error as well).
+> The start signup action would then be an action where the response does not matter and it is just a side effect for us.
+> The signup success action is also one where the response matters but we do not want to deal with sending this. The request is therefore inbetween the different actions, each action only cares about a part of that. While the request is on its way it is not something our state/store cares about.
+> The same is true for functions related to local storage which is a synchronous action which occurs instantly and we could therefore do this in the reducer (only asynchronous code is forbidden in the reducer). However, adding the localStorage.setItem('userData', JSON.stringify(user)) to our reducer would not break the code but will be considered as bad practice.
+> Accessing and writing something to the localStorage is really just a side effect of the application. Although the result of that matters to us but the process itself is not interesting to us and therefore considered as a side effects.
+> There is a separate package also provided and maintained by the NgRx team which helps us with dealing with such side effects while still staying within this NgRx world/pattern.
+> This package has to be installed using the following code in the terminal within the project directory:
+
+   npm install --save @ngrx/effects
+
+> This is a package that provides us with tools for working elegantly with side effects between actions which we dispatch and receive so that we can keep our reducers clean and still have a place for managing these side effects.
+> We would need to restart ng-serve after installing teh package.
+> It is important to note that we could also go for an approach where we still have a service for sending  the http request and working with localStorage and then have our reducer and NgRx for managing our current state (i.e. the setup we currently have at the moment).
+> This will come down with our personal preference and likings.
+> It is good for learning if we try to move as much as possible into the NgRx world/pattern and therefore use the @ngrx/effects tools for managing side effects such as http request and localStorage.
