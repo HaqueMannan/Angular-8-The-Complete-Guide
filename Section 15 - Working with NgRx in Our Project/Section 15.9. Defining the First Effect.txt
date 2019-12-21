@@ -1,0 +1,39 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+> We will look at defining a login effect to understand how we can setup a side effect in NgRx.
+> In the auth/store directory we would create a new auth.effects.ts file. In this file we would export a normal class. We organise our effects in classes.
+
+   auth.actions.ts:
+      export const LOGIN_START = '[Auth] Login Start';
+
+   auth.effects.ts:
+      import { Actions, ofType } from "@ngrx/effects";
+
+      import * as AuthActions from './auth.actions';
+
+      export class AuthEffects {
+         authLogin = this.actions$.pipe(
+            ofType(AuthActions.LOGIN_START)
+         );
+
+         constructor(private actions$: Actions) {}
+      }
+
+> The name of the class should match the name of the file.
+> Inside this file we need to import and inject Actions from the @ngrx/effects package using the constructor.
+> We imported Actions from from @ngrx/store previously for creating our actions, but the Actions from @ngrx/effects is something different i.e. a different kind of object.
+> This allows us to inject actions$ (the convention is to use the dollar sign at the end but the name is entirely upto us to choose) with a type of Actions.
+> The Actions type is one big Observable that will give us access to all dispatched actions so that we can react to them, but we just react to them differently to the reducer.
+> In the AuthEffects class the idea is that we do not change any state but that we can execute any other code that should happen when such an action is dispatched. We can then dispatch a new action once that code (which may also be asynchronous) is completed.
+> Therefore the action$ variable holds a stream of dispatched actions so to say.
+> Using the $ after the variable name is a pattern to distinguish variables which are Observables (and we would see this pattern in a lot of official documents) but is not mandatory (required) to follow this pattern.
+> With the Actions injected we can register our first effect i.e. our first action handler so to say.
+> We add such an effect as a normal property in our AuthEffects class e.g. AuthLogin (we can choose any name but it should describe the effect we are handling).
+> We assign the property a value where we assign our inject action$ variable. The actions$ is just an Observable and therefore we can call .pipe or .subscribe on it.
+> We do not need to call .subscribe because @ngrx/effects will subscribe for us and so we can just call the .pipe method instead.
+> We need to .pipe a special rxjs operator which is not part of RxJs but is provided by @ngrx/effects called ofType operator.
+> The ofType simply allows us to define a filter for which types of effects we want to continue in the Observable pipe we are creating (i.e. Observable stream). This is because we can have multiple effects by adding multiple properties to our class and we can simply define different types of effects that we want to handle in each chain.
+> In the above example we can handle the login effect/action. Therefore, since we want to handle the http request in our AuthEffects we need a new action identifier in our auth.actions.ts file, in the above this is called LOGIN_START. 
+> The LOGIN_START is basically the point where we want to start sending our requests. Therefore in our auth.effects.ts file we import everything from our auth.actions.ts file and then in our ofType filter we can refer to the LOGIN_START.
+> The ofType code allows us to only continue in the Observable chain if the action that we are reacting to is of the type LOGIN_START and all other actions will not trigger this effect code.
+> We could add multiple actions in the ofType filter to trigger the effect, if we want to run the same code for other actions.
