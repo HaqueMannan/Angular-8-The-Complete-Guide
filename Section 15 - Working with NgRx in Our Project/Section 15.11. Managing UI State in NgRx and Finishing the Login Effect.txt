@@ -1,0 +1,104 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+Managing UI State in NgRx:
+> The solution to the problem we have now with our Login is that we have to manage more of our authentication related state and the state that only matters to the AuthComponent in our NgRx store.
+> We should manage whether we succeeded or failed. In the auth.action.ts file we are handling a success case which our LOGIN action which leads to the reducer creating a user object. We should also add a LOGIN_FAIL action.
+> We need to ensure we add LoginFail to the union export to prevent any TypeScript errors in our reducer file.
+
+   auth.actions.ts:
+      export const LOGIN_FAIL = '[Auth] Login Fail';
+      export class LoginFail implements Action {
+         readonly type = LOGIN_FAIL;
+         constructor(public payload: string) {}
+      }
+      export type AuthActions = Login | Logout | LoginStart | LoginFail;
+
+> We might want an error message so we would add a payload in the constructor for our LOGIN_FAIL Action class.
+> With the LOGIN_FAIL class added, we would now have to also work on our reducer for what we manage in our application state. A potential application error should be managed here.
+
+   auth.reducer.ts:
+      export interface State {
+         user: User;
+         authError: string;
+      }
+      const initialState = {
+         user: null,
+         authError: null
+      }
+      export function authReducer(state = initialState, action: AuthActions.AuthActions) {
+         switch(action.type) {
+            case AuthActions.LOGIN:
+               ...
+               return {
+                  ...state,
+                  authError: null,
+                  user
+               }
+            case AuthActions.LOGIN_START:
+               return {
+                  ...state,
+                  authError: null
+               }
+         }
+      }
+
+> We have a new property in our interface called authError which is of the type string which will hold our error message. In the initialState the authError could be an empty string or null so that initially we have no error.
+> When we login successfully we want to set the authError back to null in case it was something different. We would want to do the same when we start logging in.
+> We also need to handle the LOGIN_FAIL case which we should return a new state based on the previous state where we probably want to set the user to null and then set authError to the action.payload because the payload is already a string which will contain the message we want to use.
+> We now have an authError property in our state, which we can now simply subscribe to in the auth.component.ts file to be informed of potential errors we are getting.
+
+   auth.component.ts:
+      import { ..., OnDestroy, OnInit } from '@angular/core';
+      export class AuthComponent implements OnInit, OnDestroy {
+         ngOnInit() {
+            this.store.select('auth').subscribe(authState => {
+               this.error = authState.authError;
+            });
+         }
+
+         onSubmit(form: NgForm) {
+            if (this.isLoginMode) {
+               this.store.dispatch(new AuthActions.LoginStart({ email: email, password: password }));
+            } else {
+               ...
+            }
+         }
+      }
+
+> Instead of subscribing to the authObs observable, we can select our auth slice of our store and subscribe to that.
+> We get our authState object, we could use the map operator to extract the data we want, but in that authState object we get the current user and authError properties.
+> We can handle the UI and application state using these properties in the OnInit lifecycle method. The authState will always have the most up to date state of the application.
+> We are now updating the component UI based on the current state we have in our NgRx store and we are dispatching our LoginStart. The missing piece is that we redirect once we are logged in.
+> We can consider navigation as a side effect. Navigation impacts our application but it does not impact the state of the application (i.e. it effects the state of what the user sees but not the state of the application data).
+
+
+Finishing the Login Effect:
+> Below is the code to add a effect for navigation:
+
+   auth.effects.ts:
+      import { Router } from '@angular/router';
+      import { switchMap, catchError, map, tap } from 'rxjs/operators';
+
+      @Injectable()
+      export class AuthEffects {
+         @Effect()
+         authLogin = this.actions$.pipe(...)
+
+      @Effect({ dispatch: false })
+      authSuccess = this.actions$.pipe(
+         ofType(AuthActions.LOGIN),
+         tap(() => {
+            this.router.navigate(['./']);
+         })
+      );
+
+         constructor(private actions$: Actions, private http: HttpClient, private router: Router) {}
+      }
+
+> It is important to note that the authSuccess is an effect that does dispatch a new action at the end.
+> Typically effects usually hold an observable which should be dispatch to an action at the end.
+> To inform NgRx Effects to know about not returning an action at the end and avoid errors, we have to pass in an object to our @Effect decorator where we set dispatch option to false. This will let NgRx Effects know that this action does not yield a dispatchable action at the end.
+> The AuthActions.LOGIN action will only fire on a successful login and not as soon as we start the login process.
+
+
+Important Note: the code in the recipes application has been updated to add the logic for the error message handling. Refer to the auth.component.ts and auth.effects.ts file to see the changes to make the NgRx error handler to work with our application.

@@ -61,7 +61,7 @@ Effects & Error Handling:
                return this.http.post<AuthResponseData>(
                   ...
                ).pipe(map(resData => {
-                  of();
+                  
                }), catchError(error => {
                   of();
                }));
@@ -94,7 +94,7 @@ Login via NgRx Effects:
                   ...
                ).pipe(map(resData => {
                   const expirationDate = new Date(new Date().getTime() + +resData.expiresIn * 1000);
-                  return of(new AuthActions.Login({ email: resData.email, userId: resData.localId, token: resData.idToken, expirationDate: expirationDate }));
+                  return new AuthActions.Login({ email: resData.email, userId: resData.localId, token: resData.idToken, expirationDate: expirationDate });
                }), catchError(error => {
                   return of();
                }));
@@ -105,6 +105,7 @@ Login via NgRx Effects:
 
 > In the above case we return an empty observable until we add proper error handling.
 > In the map we return an observable that holds our Login action because at this point in time we have a successfully logged in user and we want to reflect that in the application by reaching the LOGIN reducer code and for that we need to dispatch the LOGIN action.
+> We do not need the of() operator because map automatically wraps what we return into an observable.
 > We create a new AuthActions.Login object. We need to feed in a new object with the email, password, token and expirationDate for the logged in user.
 > We use the +resData.expiresIn to convert it to a number to avoid any errors.
 > To take advantage of our AuthEffects for logging in we need to wire everything up. To do this we need to go to add @Injectable decorator to our AuthEffects class which we need to import from @angular/core.
