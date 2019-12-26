@@ -1,0 +1,154 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+Effects & Error Handling:
+> Continuing on with defining the AuthEffects for authLogin action. We filter for the specific action, but the question is what do we want to do with the actions we are reacting to i.e. LOGIN_START.
+> The LOGIN_START action should yield us some specific information that we need for logging in. For that we need to create a new Action class in our auth.action.ts file:
+
+   auth.actions.ts:
+      ...
+      export const LOGIN_START = '[Auth] Login Start';
+      export class LoginStart implements Action {
+         readonly type = LOGIN_START;
+         constructor(public payload: { email: string, password: string }) {}
+      }
+
+> The LoginStart class also implements the Action which has our readonly type of the action.
+> The LoginStart class also needs a payload of email and password which we add to the constructor. the payload is simply a object with a keys which we define the keys type.
+> We can go back into our auth.effects.ts file and use another rxjs operator as a second step. Therefore, the first step is for filtering and the next step is a switchMap which allows us to create a new observable by taking another observable data.
+> We get our authData which we know would be the type of AuthActions.LoginStart as we are filtering for the LoginStart class. In the switchMap we can return a new observable, and in this case will use the Angular Http Client to send our Login request (as we previously did in the auth.service.ts file login function).
+
+   auth.effects.ts:
+      import { HttpClient } from '@angular/common/http';
+      import { Actions, ofType, Effect } from "@ngrx/effects";
+      import { switchMap } from 'rxjs/operators';
+      import { environment } from '../../../environments/environment';
+
+      export interface AuthResponseData { idToken: string; email: string; refreshToken: string; expiresIn: string; localId: string;registered?: boolean; }
+
+      export class AuthEffects {
+         @Effect()
+         authLogin = this.actions$.pipe(
+            ofType(AuthActions.LOGIN_START),
+            switchMap((authData: AuthActions.LoginStart) => {
+               return this.http.post<AuthResponseData>(
+                  'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=' + environment.firebaseAPIKey,
+                  { email: authData.payload.email, password: authData.payload.password, returnSecureToken: true }
+               );
+            })
+         );
+
+         constructor(private actions$: Actions, private http: HttpClient) {}
+      }
+
+> We need to inject the HttpClient by importing it and setting a private variable in our constructor. We also need to inject our environment const and also the AuthResponseData interface into our effect.ts file. Finally, we also need to extract email and password from authData.payload object.
+> We now have our AuthEffects for logging in but this effect will not work.
+> Firstly, an effect by default always should return a new action at the end once it has completed. This is because the effect itself does not change the state as it only executes some code. Typically, once an effect is completed we would want to edit the state.
+> We need to add in a special @Effect() decorator to the authLogin property to turn it into an effect which ngrx/effects is able to pick up later.
+> Since we are in an observable chain we are returning a new action simply means we have to return a new observable.
+> We only want to log the user in if we have not got an error from the http request. In the auth.service.ts file we catchError to handle errors and only if we get no error we continue to handle the authentication. We would want to use the same in our effects; however, the logic is slightly different.
+> It is important to understand that an observable completes whenever an error is thrown and therefore in the auth.service.ts file whenever the http request yields an error the catchError kicks in and the code for authentication never executes and the entire observable dies. This is no problem because when we call the login() function again a new observable is created.
+> In effects this is different because we have an ongoing observable stream which must never die as long as our application is running. Therefore, if we were to catch an error by using catchError as a next step after the switchMap (or even if we do not add the catchError but the http request throws an errors) the entire stream would die. This would mean if we try to login again will simply not work because the this.actions$.pipe will never react again to another dispatched AuthActions.LOGIN_START event because the entire observable is dead.
+> Therefore errors must be handled on a different level. With switchMap we are returning a new observable and so we can call .pipe on the inner observable.
+
+   auth.effects.ts:
+      import { of } from 'rxjs';
+      import { switchMap, catchError, map } from 'rxjs/operators';
+      export class AuthEffects {
+         @Effect()
+         authLogin = this.actions$.pipe(
+            ofType(AuthActions.LOGIN_START),
+            switchMap((authData: AuthActions.LoginStart) => {
+               return this.http.post<AuthResponseData>(
+                  ...
+               ).pipe(map(resData => {
+                  of();
+               }), catchError(error => {
+                  of();
+               }));
+            })
+         );
+         ...
+      }
+
+> This allows us to add operators on the inner observable level and not on the overall observable chain. We can now pipe the catchError and also pipe map which would execute if we have no error, both which we would need to import from rxjs/operators.
+> The catchError will receive any error we might receive which we can handle in our error handling code but most importantly we have to return a non-error observable so that our overall observable stream does not die.
+> We use of which is imported from rxjs which is a utility function for creating a new observable without an error.
+> In map this by default will not have an error but we also must not create an error. We have to return a non-erroneous observable in map as well and so we would also use the of function to create a new observable.
+> The question is now what should be inside of the new of observables?
+
+
+Login via NgRx Effects:
+> We typically want to dispatch a new action once we are done with the code in our effect. Therefore, what should be in the of function should be a new action.
+> We do not need to call dispatch because this is partly done by the @Effect decorator. Our entire chain results will automatically be treated as an action by NgRx Effects and therefore will be dispatched.
+> Therefore, we only need to return/add an action object which NgRx Effects will automatically dispatch it for us.
+
+   auth.effects.ts:
+      import { Injectable } from '@angular/core';
+      @Injectable()
+      export class AuthEffects {
+         @Effect()
+         authLogin = this.actions$.pipe(
+            ofType(AuthActions.LOGIN_START),
+            switchMap((authData: AuthActions.LoginStart) => {
+               return this.http.post<AuthResponseData>(
+                  ...
+               ).pipe(map(resData => {
+                  const expirationDate = new Date(new Date().getTime() + +resData.expiresIn * 1000);
+                  return of(new AuthActions.Login({ email: resData.email, userId: resData.localId, token: resData.idToken, expirationDate: expirationDate }));
+               }), catchError(error => {
+                  return of();
+               }));
+            })
+         );
+         ...
+      }
+
+> In the above case we return an empty observable until we add proper error handling.
+> In the map we return an observable that holds our Login action because at this point in time we have a successfully logged in user and we want to reflect that in the application by reaching the LOGIN reducer code and for that we need to dispatch the LOGIN action.
+> We create a new AuthActions.Login object. We need to feed in a new object with the email, password, token and expirationDate for the logged in user.
+> We use the +resData.expiresIn to convert it to a number to avoid any errors.
+> To take advantage of our AuthEffects for logging in we need to wire everything up. To do this we need to go to add @Injectable decorator to our AuthEffects class which we need to import from @angular/core.
+> We do not need to provide the @Injectable in root as it will never be injected itself. The AuthEffects needs @Injectable so that things can be injected into the AuthEffects class as we are injecting Actions and the HttpClient otherwise we would get errors.
+> To register all the effects logic globally, we need to go to the app.module.ts file and after registering our StoreModule we would now register an EffectsModule which we need to import from @ngrx/effects.
+
+   app.module.ts:
+      import { EffectsModule } from '@ngrx/effects';
+      import { AuthEffects } from './auth/store/auth.effects';
+      @NgModule({
+         ...
+         imports: [
+            ...
+            StoreModule.forRoot(fromApp.appReducer),
+            EffectsModule.forRoot([AuthEffects]),
+         ],
+         bootstrap: [AppComponent]
+      })
+
+> The EffectsModule also has a forRoot method which we pass an array of our root effects i.e. our effect classes. In the above this is our AuthEffects class which we also need to import.
+> The missing piece is now to dispatch a Login Action. We have in our auth.actions.ts file the LoginStart action and therefore all we have to do is go to the file which will call on the login action which is our auth.component.ts file.
+
+   auth.component.ts:
+      import { Store } from '@ngrx/store';
+      import * as fromApp from '../store/app.reducer';
+      import * as AuthActions from './store/auth.actions';
+
+      constructor(private store: Store<fromApp.AppState>) {}
+      export class AuthComponent implements OnDestroy {
+         onSubmit(form: NgForm) {
+            const email = form.value.email;
+            const password = form.value.password;
+            ...
+            if (this.isLoginMode) {
+               this.store.dispatch(new AuthActions.LoginStart({ email: email, password: password }));
+            } else {
+               authObs = this.authService.signup(email, password)
+            }
+         }
+      }
+
+> We want to inject our store in the constructor so that we can dispatch a new AuthAction which is LoginStart, passing in the email and password from the form.
+> An important note, dispatch does not give us an observable which is why we cannot store it in authObs. This also means that we are not notified once the login process is done. Therefore, resetting the loading and navigating away will not work for the moment.
+> We would have to check the network tab in the developer tools to see whether the login process in theory works correctly as the JavaScript console will error as we have not updated all of our code.
+> We should see in the network tab a name: verifyPassword or accounts:signInWithPassword that we sent with our http request with a status 200 and in the preview we should see the success data. This will indicate that the login request was sent and generally succeeded.
+> However, the rest of our application is now no longer working as we now have an error. This is in relation to our auth.component.ts file where we are trying to subscribe to authObs which is not set in the isLoginMode no more (unlike the signup method).
+> We would need to find a different solution for being notified about whether we are currently waiting for a response, if we were successful or an error as actions do not return an observable.
