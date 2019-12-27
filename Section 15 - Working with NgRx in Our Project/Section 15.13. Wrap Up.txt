@@ -1,0 +1,17 @@
+Important Note: The final code reference is applied to "The Project/AppProject" recipes application.
+
+Wrap Up:
+> NgRx can be complex in setting it all up; however, as soon as it is setup adding more actions (and having side effects) is really streamlined and we have a clear plan on how we handle things.
+> Asynchronous code and any side effects are handled in the effects.ts file.
+> State changes are handled in the reducer.ts files.
+> We can see how all these pieces come together to give us one global store in our application that we can use anywhere to access any data and dispatch any event.
+> If services & subjects are preferred then this is perfectly fine and we do not have to use NgRx if we do not want to. However, it can be a decent alternative to services and subjects in much larger applications.
+> The larger the application grows and the more people working on it, a streamlined approach such as NgRx can be really helpful.
+> The official documentation for NgRx can be found on: https://ngrx.io/ and we can learn even more advanced features of NgRx as we only have scratched the surface.
+> The gihub page has a projects directory which provides examples of using the more advanced features/patterns of NgRx: https://github.com/ngrx/platform/tree/master/projects/example-app
+
+
+Alternative NgRx Syntax:
+> The NgRx team also released an alternative syntax for creating actions, reducers, effects etc.
+> The approach and setup shown in the "The Project/AppProject" directory is a bit more verbose (which actually has the advantage of seeing more of the things that go on under the hood). Exploring the alternative slightly shorter syntax might therefore be an interesting next step.
+> This syntax is not better, faster or more secure than the one we have learned. The entire switch of the official docs is pretty drastic (and hard to understand to be very honest) since the syntax taught in "The Project/AppProject" was the syntax used for close to two years. Many teams will certainly still be on that syntax and that alone is a strong reason to learn it.
