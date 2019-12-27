@@ -1,0 +1,55 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+Using the Store Devtools:
+> There is a special developer tool we can install in our browser by searching for redux devtools extension to get to the github repository https://github.com/zalmoxisus/redux-devtools-extension and within there there is a link to http://extension.remotedev.io
+> This link will provide instructions on how to install the developer tool within Chrome/Firefox.
+> Once installed we can install a special package in our project using the command in the terminal within our project directory:
+
+   npm install --save-dev @ngrx/store-devtools
+
+> After installing the new package we should restart the server using ng serve command.
+> To use the extension we need to go to our app.module.ts file within the imports array after creating the StoreModule, we can register a new module StoreDevtoolsModule which we need to import from @ngrx/store-devtools.
+
+   app.module.ts:
+      import { StoreDevtoolsModule } from '@ngrx/store-devtools';
+      import { environment } from '../environments/environment';
+      @NgModule({
+         ...
+         imports: [
+            ...
+            StoreModule.forRoot(fromApp.appReducer),
+            EffectsModule.forRoot([AuthEffects]),
+            StoreDevtoolsModule.instrument({ logOnly: environment.production }),
+         ],
+      })
+
+> We call instrument on the StoreDevtoolsModule and this takes in an object where we can configure this.
+> The one configuration we can add is the logOnly which we set to environment.production (which is the production property from our environment.ts/environment.prod.ts file we import).
+> The production property is set to false during development but true during production. Therefore, with logOnly we are basically restricting the output to only some log messages when we are in production.
+> With this added, we can save our application and go back to it in the browser (refreshing our browser after installing the devtool) and head into the browsers developer tools. We should now see a new Redux extension tab.
+> In the Redux developer tab, we now have a detailed log of what is happening in our application. We can now dive into the different steps that are being executed in our application and we can see the actions dispatched and the current state of the application.
+
+
+The Router Store:
+> There is another package that may come in handy in some application called Router Store. We can install this new package by running the terminal command within our project directory:
+
+   npm install --save @ngrx/router-store
+
+> This is an official package as part of the NgRx suite which helps us with reacting to routing actions. It basically dispatches actions automatically based on the Angular Router and this would then allow us to write code in our reducer or with NgRx effects that runs when such routing actions occurs.
+> To add this functionality we need to go to the app.module.ts file and add another import where we import the StoreRouterConnectingModule from @ngrx/router-store.
+
+   app.module.ts:
+      import { StoreDevtoolsModule } from '@ngrx/store-devtools';
+      import { environment } from '../environments/environment';
+      @NgModule({
+         ...
+         imports: [
+            ...
+            StoreModule.forRoot(fromApp.appReducer),
+            EffectsModule.forRoot([AuthEffects]),
+            StoreDevtoolsModule.instrument({ logOnly: environment.production }),
+         ],
+      })
+
+> We add this to the imports array after our StoreModule and use the forRoot without passing any arguments. If we now save this and go back to our application in the browser, we should now see in the Redux developer tools more actions being dispatched for example the @ngrx/router-store/request, @ngrx/router-store/navigation, etc.
+> If we look at these actions we will see that they have a payload where we get the router state, the URL we are trying to navigate to, etc. which is a more detailed information about our routing action.
