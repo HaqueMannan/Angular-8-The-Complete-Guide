@@ -1,11 +1,12 @@
 import { Action } from '@ngrx/store';
-import { START_EDIT } from 'src/app/shopping-list/store/shopping-list.actions';
+// import { START_EDIT } from 'src/app/shopping-list/store/shopping-list.actions';
 
 export const LOGIN_START = '[Auth] Login Start';
 export const AUTHENTICATE_SUCCESS = '[Auth] Login';
 export const AUTHENTICATE_FAIL = '[Auth] Login Fail';
 export const LOGOUT = '[Auth] Logout';
 export const SIGNUP_START = '[Auth] Signup Start';
+export const AUTO_LOGIN = '[Auth] Auto Login';
 export const CLEAR_ERROR = '[Auth] Clear Error';
 
 export class AuthenticateSuccess implements Action {
@@ -15,8 +16,9 @@ export class AuthenticateSuccess implements Action {
       email: string,
       userId: string,
       token: string,
-      expirationDate: Date }
-   ) {}
+      expirationDate: Date,
+      redirect: boolean
+   }) {}
 }
 
 export class Logout implements Action {
@@ -41,8 +43,12 @@ export class SignupStart implements Action {
    constructor(public payload: { email: string, password: string }) {}
 }
 
+export class AutoLogin implements Action {
+   readonly type = AUTO_LOGIN;
+}
+
 export class clearError implements Action {
    readonly type = CLEAR_ERROR;
 }
 
-export type AuthActions = AuthenticateSuccess | Logout | LoginStart | AuthenticateFail | SignupStart | clearError;
+export type AuthActions = AuthenticateSuccess | Logout | LoginStart | AuthenticateFail | SignupStart | clearError | AutoLogin;
