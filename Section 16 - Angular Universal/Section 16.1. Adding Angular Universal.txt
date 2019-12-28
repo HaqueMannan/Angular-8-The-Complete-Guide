@@ -1,0 +1,104 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+What is Angular Universal?
+> Angular allows us to build front-end user interfaces that run in the browser i.e. our entire Angular application runs in the browser.
+> Angular Universal now allows us to pre-render our Angular application on the server.
+> It is not a server side framework like Express.js but it allows us to on the fly pre-render the pages our user visits. So when the user loads the page, they get the finished page served back and the initial rendering does not need to happen in the browser. Only subsequent actions by the user is handled as usual by the browser only.
+> If we look at our Angular application in the browser and right click to view the page source, what we would see is a very small index.html code. We have the <app-root> element and then a bunch of JavaScript <script> elements. This is how a normal Angular application would look like.
+> The <script> imports are in the end our Angular application i.e. the Angular framework and the code that we wrote which are compiled, optimised and bundled together.
+> The <app-root> simply marks the place where our code in the end will start rendering the Angular application. The fact that we see our application on the screen is simply because all the Angular scripts do their job and they change the page rendering after it has been loaded by the browser. This occurs so fast that we do not see that but this is happening in the background.
+> This approach is generally fine, however, in some situations it might have downside for example if the users are on slower networks and until the JavaScript files have been downloaded the user will not see anything. Another downside example is SEO (Search Engine Optimisation), a search engine will look at different websites to index them and the search engine will only see what is initially downloaded by the server. It does not necessarily wait for all our scripts to be done with rendering what the user sees. Therefore, the search engine would not see what the user would see in the end. This would not help with getting a good index score because the search engine does not see much.
+> For the examples above, it might be good to have the initial request to be pre-rendered on the server so that we get a real HTML page served back. That page will continue to hold all the script imports because it will be converted into an Angular application after it has been loaded and all subsequent clicks will be handled in the browser only to be fast and reactive but the first load will be handled in the server. This will fix the search engine problem and slower connections. Angular Universal will help us with this.
+
+
+Adding Angular Universal:
+> To add Angular Universal we only have to run one command line command in the terminal:
+
+   ng add @nguniversal/express-engine --clientProject projectIdentifierName
+
+> The identifier would be located in the angular.json file which is the name of the project i.e. the first property within the project key value. In the below example AppProject would be the identifier
+
+   angular.json:
+      {  ...,
+         "projects": {
+            "AppProject": {...}
+      }
+
+> With this command our project will be transformed. It will continue to work as before and we can continue to run it as a normal Angular application; however, we can now also have the option to running it on a server and getting the pre-rendered application.
+> This will take a while as it will be doing a couple of installation and transformation and complex setup (previously this setup would have had to be done manually but no longer necessary with the CLI command).
+> With the setup completed, there are two important things we would need to do before we can take advantage of this.
+> The first step is to go into the app.server.module.ts file and make sure to have ModuleMapLoaderModule imported from @nguniversal/module-map-ngfactory-loader.
+
+   app.server.module.ts:
+      import { ModuleMapLoaderModule } from '@nguniversal/module-map-ngfactory-loader';
+      @NgModule({
+         imports: [
+            ...
+               ModuleMapLoaderModule,
+         ],
+      }
+
+> If this has not been added for us we can do this by simply running the following command in the terminal within our project directory:
+
+   npm install --save @nguniversal/module-map-ngfactory-loader
+
+> This is a very crucial package which provides the ModuleMapLoaderModule which we have to add to the NgModule imports within the app.server.module.ts file to enable lazy loading with Angular Universal.
+> Without this our application would fail because the lazy loaded routes will not work in the end.
+> We must now understand that our code is now first rendered and executed on the server and not in the browser. Therefore, the first loaded page is rendered on the server and so when the rendered page is served/returned to the user only then a normal single page application starts to run in the browser of the user.
+> This has one important implication (and is part of the second step), only certain browser APIs are not available, namely in our case the localStorage. Reading and writing to the localStorage will fail on a server because localStorage is a browser only API and is not available on the server (Node.js).
+> To fix this we should go to the app.component.ts file and make sure we do not dispatch the action (the action that reads/writes to localStorage) when this gets rendered on the server.
+> We need to figure out if we are running on the server or not and this can be done by injecting an identifier provided by Angular that tells us on which platform we are running on.
+
+   app.component.ts:
+      import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
+      import { isPlatformBrowser, isPlatformServer } from '@angular/common'
+      ...
+      export class AppComponent implements OnInit {
+         constructor(private store: Store<fromApp.AppState>, @Inject(PLATFORM_ID) private platformID) {}
+         ngOnInit() {
+            if (isPlatformBrowser(this.platformID)) {
+               this.store.dispatch(new AuthActions.AutoLogin());
+            }
+         }
+      }
+
+> We do not inject by type as we have always done before but instead we now use a special Inject decorator. This allows us to inject a hardcoded value (rather than a class as we have done previously hence we use type).
+> Angular also provides us an PLATFORM_ID identifier which we can import from @angular/core.
+> This will tell Angular to look for the globally provided value with the PLATFORM_ID identifier and inject the value to the constructor class and store it in the platformID variable/property.
+> With this injected we can use this in ngOnInit. Using the import(s) of isPlatformBrowser and/or isPlatformServer from @angular/common this will allow us to check whether the platform is a browser/server on our ngOnInit.
+> The isPlatformBrowser (or isPlatformServer) function requires the PLATFORM_ID which is why we injected it. This allows Angular know where our code is running and we only want to dispatch our AutoLogin action if we are running in the browser due to our localStorage code.
+> This would mean the AutoLogin action will now run on the browser but not on the server.
+> We are now done setting up Angular Universal for the application and the second step workaround is always needed whenever we are working with some browser only API.
+> In our package.json file we should now see a new script command:
+
+   package.json:
+      {  ...
+         "build:ssr": "..."
+         ...
+      }
+
+> We can now run the command: npm run build:ssr which will now build our application for Angular Universal which will allow us to serve this application.
+> We would need a node.js server i.e. a host capable of executing node.js to server our Angular Universal app. A Static host will no longer work as we no longer have a static site/application as we no longer have only a html, css and JavaScript but now have code that runs on the server.
+> We would take our entire application directory and upload it on our node server and then run the code npm run serve:ssr on our node server to get the server up and running and serve the Angular Universal application. Therefore, when requests hit that server they are served the pre-rendered page and thereafter the normal Angular single page application.
+> If we run the command (npm run serve:ssr) in our terminal we should see this served through node.js on localhost:4000 where we can visit the application locally. If we now look at the page source code we should see the real rendered page that is being displayed initially.
+
+Bug/Error Fix:
+> When running the npm run build:ssr command this seems to fail with an error message:
+
+   ERROR in error TS6053: File '.../AppProjectAngularUniversal/src/src/main.server.ts' not found.
+
+> This is because there is an extra src/ in the file path which causes the problem. To fix this go into the tsconfig.server.json file and update the code
+
+Before
+   tsconfig.server.json:
+      "files": [
+         "src/main.server.ts"
+      ],
+
+After
+   tsconfig.server.json:
+   "files": [
+      "main.server.ts"
+   ],
+
+> This should correct the error and successfully build the Angular Universal application without any errors.
