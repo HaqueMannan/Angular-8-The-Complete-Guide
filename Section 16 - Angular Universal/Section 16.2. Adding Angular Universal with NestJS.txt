@@ -1,0 +1,23 @@
+Important Note: The code reference is applied to "The Project/AppProject" recipes application.
+
+Adding Angular Universal with NestJS:
+> If we want to add Angular Universal with NestJS the below steps would apply. We will pretend that we have an application without Angular Universal being applied i.e. we have an application that only renders in the browser.
+> NestJS is a server side framework for Node.js and is not an Angular library/framework.
+> We can see the official documentation for NestJS on https://nestjs.com/
+> NestJS is a server side framework which borrowed a lot of ideas from Angular. It can be said that NestJS is like "Angular for the server side" (this fills a totally different role being a server side framework).
+> NestJS also uses TypeScript. The team behind NestJS also likes Angular and therefore we have a command:
+
+   ng add n@estjs/ng-universal
+
+> This command will ask for the name of the project which we can find in the angular.json file within the projects key property value.
+> We can run this command in any Angular application and this would also setup Angular Universal rendering but with a NestJS application attached to it.
+> The difference between the two approaches, the first method has a simple server that simply pre-renders our Angular pages when we visit the page. For Angular Universal with NestJS, this would work differently.
+> NestJS sets up universal rendering but in addition it gives us a full NestJS application to go with. NestJS is a server side framework which we could use to build an API.
+> This will give us a simpler approach of having a full stack Angular app where we do not just have the browser front-end but where we actually also have everything we need to build a server side API to which our Angular app then could talk to.
+> We do not need to use NestJS as we could build an API with Node/Express, PHP, C#, Python, etc. or use a service like Firebase or we have an application that does not need a backend API at all.
+> If we want to build a full stack app where we also write our own server side code and build our own API to which our Angular application can talk to, then this approach is an easy way to getting started.
+> We should see a server directory within or project which contains a very simple setup for a NestJS application.
+> One important note, just as before we should make sure that in our normal Angular code, the app.server.module.ts file has the ModuleMapLoaderModule imported from @nguniversal/module-map-ngfactory-loader and within the @NgModule imports array of the file. Furthermore, we need update the app.component.ts file to make sure any browser specific APIs are handled i.e. to not run on the server by injecting using the @Inject decorator and using the global PLATFORM_ID from @angular/core and using the isPlaformBorwser/isPlaformServer from @angular/common to see whether the code is being executed in the browser or server to ensure browser specific API codes are run in the browser only.
+> We use npm run build:ssr as normal to build our project and npm run serve:ssr to serve the application.
+> To fix the bug with npm run build:ssr we would need to update the tsconfig.server.js file path for main.server.ts to remove the src/ from the path in that file.
+> To deploy the application we would have to deploy to a node.js server and this does not change for either method as both require JavaScript on the server (i.e. NodeJS) to run on the server to execute our server side code.
