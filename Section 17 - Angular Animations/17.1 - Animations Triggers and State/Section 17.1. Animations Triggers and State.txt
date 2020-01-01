@@ -1,0 +1,45 @@
+> Angular ships with its own animation package which we can use for example render the addition of items to a list or the conditional attaching/detaching of elements to the DOM.
+> All these things which are kind of hard to handle with regular CSS transitions/animations for something that does not exist in the DOM at the moment, Angular provides tools to make it easier.
+> With the release of Angular 4, the general syntax of Angular Animations did not change. However, the animation functions were moved into their own package and we now also need to add a special module to our app.module.ts imports array.
+> We probably need to install the new animations package (running the command never hurts): 
+   npm install --save @angular/animations
+> Add the BrowserAnimationsModule to our imports array in the app.module.ts file. This module needs to be imported from @angular/platform-browser/animations.
+> We then import trigger, state, style, etc from @angular/animations instead of @angular/core.
+
+Animations Triggers and State:
+> Animations are setup in the component.ts file @Component decorator where we have an animations array and in that array we define the animations that the template should be aware of.
+> Animations are generally TypeScript code. It is easy to understand how we manipulate certain styles of elements since we will use the same names as we would use in normal CSS styles.
+
+   app.component.ts:
+      import { trigger, state, style } from '@angular/animations';
+      @Component({
+         ...
+         animations: [
+            trigger('divState', [
+               state('normal', style({ 'background-color': 'red' })),
+               state('highlight', style({ backgroundColor: 'blue' }))
+            ])
+         ]
+      })
+      export class AppComponent {
+         state = 'normal';
+      }
+
+   app.module.ts:
+      <div style="width:100px; height:100px;" [@divState]="state"></div>
+
+> Each animation has a trigger and this needs to be imported from @angular/animations.
+> A trigger is a function where we tell Angular that we want to define a specific name which we can place in our DOM/template which should then trigger a certain animation.
+> The name of the trigger is entirely up to us as the developer to choose.
+> The second argument to trigger defines the animation that this trigger should toggle. The second animation argument definition is an array and so we pass in an array.
+> With the trigger setup we can add the trigger to our element within our template file. We do this by using a square brackets ([]) and within we use @ followed by the trigger name.
+> We need to bind the trigger to something because the animation we defined should not trigger all the time. Therefore, we need to bind the condition which will then control which part of the animation should run.
+> In the above app.component.ts file we have state defined with a default value of normal. Note: we could name this whatever we want as this is simply just a property within our class and is unrelated to animations. However, we can use the state property and the different values it can have in our trigger.
+> It is important to note that Angular animations works by transitioning between state one to state two. Therefore, we work with states. We do not need to name the property state as shown in the above example, but it makes sense as we are working with states in our animation.
+> We import state from @angular/animations which is a function we can use in our trigger. We would have two states to be able to transition from/to.
+> The name we pass in the state function is entirely upto us but we should make sure to use them in our template and TypeScript files.
+> The second argument is the style for the state. We pass in a style function which we import from @angular/animations. We pass a JavaScript object whereby we almost write CSS code without any hyphens (-).
+> The styles can be enclosed in single quotes which would allow us to use hyphes (-) or alternatively we could use the camel case notation.
+> We should a square div element with the colour of red which clearly stems from our normal state which was setup in the app.component.ts file state property which we bind to our divState trigger and this is the trigger we setup in the @Component animations trigger state style.
+> We do not have an animation as of now, but an animation is simply a movement/transition from one state to another.
+> We now have the beginning state setup for our animation.
