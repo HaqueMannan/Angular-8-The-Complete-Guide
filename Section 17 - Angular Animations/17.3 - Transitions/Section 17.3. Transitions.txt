@@ -1,0 +1,23 @@
+> We are able to hard switch between our different states. To animate the transition, within our component.ts file on the same level as our state functions we would use the transition function which also needs to be imported from @angular/animations.
+
+   app.component.ts:
+      import { trigger, state, style, transition, animate } from '@angular/animations';
+      @Component({
+         ...
+         animations: [
+            trigger('divState', [
+               state('normal', style({ 'background-color': 'red' })),
+               state('highlight', style({ 'background-color': 'blue' })),
+               transition('normal => highlight', animate(300))
+               transition('highlight => normal', animate(800))
+            ])
+         ]
+      })
+
+> The transition is a intuitive function which allows us to describe how the transition from one state to another state should look like i.e. how it should be animated.
+> The first argument expects the starting state and then an arrow pointing (indicating the direction) to the finishing state. The above example means from normal to highlight.
+> The second argument specifies what to do with the two states. The specify this using the animate function which also needs to be imported from @angular/animations.
+> The easiest animation/transition that we can specify in the animate function is specifying a number in milliseconds that the animation should take i.e. the duration.
+> If we now click the button, we should see the transitions from the two states animating. Note: we would need to click the button to switch between the two states to see both animation.
+> Important note: for a smooth transition effect we should use the same style naming convention in our state function i.e. we cannot mix and match for example 'background-color' in one state and backgroundColor in the other state. This will not animate the transition smoothly between each other.
+> We now have the basic knowledge on how to setup animations in Angular using triggers, state and transitions. We will now dive deeper into how we can fine tune the animations to our needs.
