@@ -1,0 +1,26 @@
+> We can have a button with an click event which would switch the state, below is an example:
+
+   app.component.html:
+      <button (click)="onAnimate()">Animate!</button>
+      <div style="width:100px; height:100px;" [@divState]="state"></div>
+
+   app.component.ts:
+      import { trigger, state, style } from '@angular/animations';
+      @Component({
+         ...
+         animations: [
+            trigger('divState', [
+               state('normal', style({ 'background-color': 'red' })),
+               state('highlight', style({ backgroundColor: 'blue' }))
+            ])
+         ]
+      })
+      export class AppComponent {
+         state = 'normal';
+         onAnimate() {
+            this.state === 'normal' ? this.state = 'highlight' : this.state = 'normal';
+         }
+      }
+
+> With this in place if we click the button, the div element will now switch from red to blue using the animation state style properties. We are now able to toggle between the different states.
+> We would now want to animate this transition to complete the animation rather than having the transition be instantaneous.
