@@ -1,0 +1,73 @@
+Cashing Assets for Offline Use:
+> To configure our service worker for caching assets for offline use we need to configure our ngsw-config.json file. This file is not that huge and is a JSON formatted file.
+> We have the index property which indicates what is the root page for our application that we want to cache and load.
+> The assetGroups property holds an array of objects. AssetGroups are configurations that define which static assets should be cached and how they should be cached.
+> Dynamic assets would be data from an API i.e. data we are fetching which might change on that API and therefore is not static.
+> Our html, css, JavaScript files would change after each production build; however, after the build it will become static.
+> We can give our assetGroups any name we would like and then we can define how these assets should be loaded in the installMode property.
+> Prefetch means that when our page loads, the service worker would go ahead and pre-fetch all the assets which are specified in the assetGroup. This would mean that it would put the assets into cache even if we do not need them yet.
+> The alternative to prefetch is lazy which would load the cache assets once we need them at least once. The advantage of lazy is that we do not occupy all the bandwidth right at the beginning; however, the downside is that if we needed an asset for the first time it would not be there. If the user loses internet connection before the asset is required the first time, it will not work because it would not be cached.
+> The updateMode property is important for the case when we are pushing a new version of our Angular application and therefore of our service worker to our server and the user is already browsing on that server. The service worker will get informed of the new service worker and now the service worker can already prefetch the updated assets or also load them lazily when they are required.
+> The assets which should be loaded are located in the resources property. Resources has one key property called files which stores an array pointing to all of the files location paths we want to cache. The path to the files is relative to the dist folder.
+> The /*.css pattern means every .css files in the root folder while the /**/*.css pattern means every .css files in any sub-folders. Therefore, we can set patterns or directly point at the files we want to cache.
+> The urls is an additional resources property we can define to cache assets from a url for example web-fonts. While the files property holds local files, the url property holds urls.
+> We will not cache assets for offline use.
+
+Example ngsw-config.json:
+   "assetGroups": [
+      {
+         "name": "app",
+         "installMode": "prefetch",
+         "resources": {
+            "files": [
+               "/favicon.ico",
+               "/index.html",
+               "/*.css",
+               "/*.js"
+            ],
+            "urls": [
+               "https://fonts.googleapis.com/css?family=Oswald:300,700"
+            ]
+         }
+      }
+
+
+Cashing Dynamic Assets & URLs:
+> We would add a new configuration property called dataGroups which would hold dynamic assets. Therefore, assetGroups holds static files and URLs while dataGroups would hold dynamic assets & URLs.
+> Dynamic assets are typically data we may request from an API or data that changes frequently.
+> The dataGroups is configured to hold an array which holds an object. The dataGroups object has properties such as:
+   - A name property to define a name of our choice for the dataGroup
+   - A urls property which holds an array of all the URLs we want to handle with this group. 
+   - We can add a versions property if we are using an API that has different versions. 
+   - The cacheConfig property holds an object whereby we can define/config in detail how the data should be cached.
+
+> The cacheConfig object has numerous properties we can configure in the object such as:
+   - The maxSize which takes a number value for the number of entries we want to cache. Entries means the number of responses (again we have a limited amount of cache space managed by the browser and therefore can limit the number of responses we cache especially for URLs with generic/different endpoints).
+   - The maxAge property defines how old should the data in the cache be before we get rid of it and definitely fetch new data. This would allow us to fetch data from cache first to deliver something onto the screen as quick as possible and then maybe reach out to more up-to-date data behind the scenes. The value is stored as a string and so 1d is one day, 12h is 12 hours, 50m is 50minutes and so on.
+   - The timeout property is defined in the same way whereby if we are waiting for a response for a certain amount of time already we then want to fallback to the cache and not wait longer but we do not want to use the cache immediately but we want to wait for the timeout at the minimum.
+   - Finally the strategy property which is important because it works together with all the above properties values allows us to define between two types of strategies. The freshness value tries to always reach out to the backend data first and only then will it use the cache if we are offline. Freshness will take into account the timeout into account to know how long to wait for a response before it uses the cache. The performance value tries to get something onto the screen as quick as possible and it will take the maxAge into account to know whether it should absolutely reach out to the backend data or just use the cache value.
+
+Example ngsw-config.json:
+   "dataGroups": [
+      {
+         "name": "posts",
+         "urls": [
+            "https://jsonplaceholder.typicode.com/posts"
+         ],
+         "version": 1,
+         "cacheConfig": {
+            "maxSize": 5,
+            "maxAge": "6h",
+            "timeout": "10s",
+            "strategy": "freshness"
+         }
+      }
+   ]
+
+
+Important note:
+> By default for a new service worker to become active and do its job we would need to reload the application/webpage.
+> If we reload the page for the second time this allows the service worker to cache the API responses i.e. data.
+
+Official Documentations:
+https://angular.io/guide/service-worker-intro
