@@ -1,0 +1,27 @@
+> The group function which also needs to be imported from @angular/animations allows us to group transitions.
+> In this function we pass as an argument an array of animations we want to perform synchronously i.e. at the same time.
+
+   app.component.ts:
+      ...
+      transition('* => void', group([
+         animate(300, style({
+            color: 'red'
+         })),
+         animate(800, style({
+            transform: 'translateX(100px)',
+            opacity: 0
+         }))
+      ]))
+
+> This allows us to group together multiple animations with possible different timing and have them occur at the same time lasting their different durations.
+> There are a couple of callbacks we can listen to so that when an animation finishes we may want to execute another code.
+> In our component.html files we use event binding on the element and use the @ sign to indicate that we are looking at an animation and setup a trigger. Following the trigger are the different animation events we can listen to.
+> The value after the animation callback is the function we want to run.
+
+   app.component.html:
+      <div style="width:100px; height:100px;" [@divState]="state" (@divState.start)="animationStarted($event)"></div>
+
+> The different callbacks we can listen to are .start and .done callback.
+> In the console we can see the event object which holds properties such as the triggerName, fromState, toState, phaseName and the totalTime of the animation.
+> We can use this to execute some code before or after the animation has started/ended.
+> We now know how to use the different tools for creating our own Angular animations within our Angular applications.
