@@ -1,0 +1,58 @@
+> We can turn an online only Angular application to a offline available application by adding a service worker which is really easy to do with Angular and fully configuring it to our needs.
+> We can go into the application tab within our browser's developer tools and on the Applications Service Workers section, we can check the Offline checkbox to simulate an offline mode i.e. no internet connection without having to actually turn off our wifi/cellular connection. If we reload the page we should see There is no internet connection error message.
+
+What are Service Workers?
+> The JavaScript code typically behaves by running on a single thread which means our web application which can consist of multiple pages (or in the case of an Angular application a single page) uses JavaScript.
+> The JavaScript code runs on a single thread and JavaScript has its features to handle asynchronous code and not block the execution. This is all normal JavaScript.
+> JavaScript in the browser also offers us to run an additional thread. We can run a so called web worker and a special form of that is the service worker on another single thread.
+> This still uses one and the same thread but it is a different thread from our main JavaScript code.
+> The important part is that this thread is decoupled from our HTML pages which means that this can also continue to run in the background (for example on a mobile phone which is provided typically on mobile browsers).
+> A service worker can manage all of our different pages (or a single page if building an Angular application) and it can listen to outgoing network requests.
+> We can listen to requests going out of our webpage (i.e. fetching) and the service worker can catch these outgoing requests and do something with them for example cache the responses in a special cache storage or then return these cached responses back to our page so that it also works if we have no internet connection (only if there is a cached version available).
+> A service worker can be seen as a proxy between our application and http requests sent to the backend. It proxies that request (which means it catches the request) and does something with it and it might allow it to still go on and leave the application but it could also block it.
+> Configuring and writing a service worker from scratch is possible, however, Angular provides us a special package which allows us to easily add and configure service worker to our application.
+
+                  Loaded JS (runs on one single thread, attached to individual HTML pages)
+                     ^
+Single Thread --------------------------------------------->
+                     |
+                     |
+               ----------------------------
+               HTML        HTML        HTML
+
+Single Thread --------------------------------------------->
+                  Service Worker (runs on additional thread, decoupled from HTML pages)
+                                 (manages ALL pages of given scope(e.g. all pages of a domain))
+
+> It is important that we are using the most latest CLI version for our project and then we can run the following command to install Angular's service worker package:
+
+   ng add @angular/pws
+
+> If we run this command will configure our existing project to use the Angular service worker package and start with a pre-configured service worker.
+> This will add something to the index.html file such as the <noscrpt> element tag to give a warning if JavaScript is turned off. It loads a <link> to the manifest.json which is also generated which is important for having a launcher icon for our application (if we have it on a mobile phone, we can save it to the home screen and have it launch with the icon).
+> In the app.module.ts file in the imports we are using ServiceWorkerModule which is imported from @angular/service-worker. This is an official package of the Angular framework.
+> This module registers a service worker which will then be proxy that catches outgoing requests and does something with them.
+> We call the register method and here we target the /ngsw-worker.js file and we will not find this file in our project directory. The reason for this is because the dist directory will auto-generate this file during the build process and this will hold our service worker within the dist directory. This file will have a lot of functionality which we do not have to and typically don't want to write on our own.
+> In the assets folder we would see the icon file added for the manifest.json file.
+> Within the root project folder we would see in the package.json file we would see the @angular/pwa added as a dependency and we have we also have a ngsw-config.json file. The ngsw-config.json is the file we can configure the service worker that would be generated.
+> The angular.json file is also adjusted to set the serviceWorker property to true for the production build. This is required because the service worker will cache some of the resources and to ensure the new build updates the service worker, these resources will contain a cache which would also be injected into the service worker which is why we need to make the build process aware of the fact that we need a service worker.
+> If we run the following command in the terminal within our project directory: 
+
+   ng build --prod
+
+> This will bundle and optimise the entire application and it will create our Angular application in a dist folder and in there we should also see the service worker i.e. the ngsw-worker.js file.
+> We need a web server we can run to host our production application. We can do this using ng serve --prod but we would not see the service worker in action correctly because it will only build it in memory.
+> Therefore, we should install a lightweight node.js server which we can install using the following command in the terminal
+
+   npm install -g http-server
+
+> This will install the http-server package globally on our machine which would then allow us to run a simple node based server which will host the content of the folder we run the command in. The command we need to run in the terminal within the production application directory is:
+
+   http-server -p 8081
+
+> The -p flag allows us to assign a port to run the server on.
+> If we reload the page once to make sure the service worker is doing its work and if we now navigate to the Applications Service Worker tab within our browser's developer tool, we should now see the ngsw-worker.js running (if we do not see this try reloading the application again).
+> Note: we should make sure to clear the storage (from Application Clear Storage) if we worked with service workers and the port served on our localHost domain before.
+> Interestingly, if we now check the Offline checkbox in Application Service Workers and we reload the page the application continues to work. We would see the same content as before even though we are offline.
+> If we look at the network tab within our browser's developer tools we should see the cached files being served and therefore our application continues to work without an internet connection and we will not see the No internet connection error message.
+> We essentially would see all the hardcoded code in our Angular application being loaded and all the dynamic contents missing (i.e. things we are fetching outside the webpage using http requests).
