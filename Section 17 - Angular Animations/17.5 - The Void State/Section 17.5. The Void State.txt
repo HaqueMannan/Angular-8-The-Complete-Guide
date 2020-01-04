@@ -1,0 +1,26 @@
+> The void state is used when the element has not been added to the DOM.
+> The void state is a reserved state name provided by Angular for cases where we have an element in an end state which was not added to the DOM at the beginning.
+> We could add the void state to the transition to state for cases when we remove an element from the DOM.
+
+   transition('void => in', animate(300))
+
+> When we have no starting state, within our transition we would use an array where animate would be placed in; however, before we execute the animate we can setup a style function where we can set an initial style.
+> This style will be applied by Angular right at the beginning. For example when we add a new list item appended to the DOM, it will instantly get the style and then transition over to the animate duration to its final style.
+
+   app.component.ts:
+      trigger('list1', [
+         state('in', style({
+            opacity: 1,
+            transform: 'translateX(0)'
+         })),
+         transition('void => *', [
+            style({
+               opacity: 0,
+               transform: 'translateX(-100px)'
+            }),
+            animate(300),
+         ])
+      ])
+
+> In the above example the list item will get the style of opacity 0 and transform/translateX of -100px and then it will animate over 300 milliseconds to its final 'in' state style i.e. opacity of 1 and transform/translateX of 0.
+> This is how we can animate list items or where we have ngIf where we have the same behaviour of something new being added to the DOM.
