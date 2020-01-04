@@ -1,0 +1,71 @@
+> If we want to use the same timing for the transition for to and from the two states we can use a single line of code using an arrow pointing in both directions, i.e. transition back and forth using the same animation functions. For example:
+
+   transition('normal <=> highlight', animate(300))
+
+> We might have a case scenario where we want to animate the object during the animation transition i.e. not at the beginning or the end but in the middle. For example:
+
+   app.component.html:
+      <button class="btn btn-primary mr-2" (click)="onAnimate()">Animate!</button>
+      <button class="btn btn-primary mr-2" (click)="onShrink()">Shrink!</button>
+      <div style="width:100px; height:100px;" [@wildState]="wildState"></div>
+
+   app.component.ts:
+      ...
+      @Component({
+         animations: [
+            trigger('wildState', [
+               state('normal', style({
+                  'background-color': 'red',
+                  transform: 'translateX(0) scale(1)'
+               })),
+               state('highlight', style({
+                  'background-color': 'blue',
+                  transform: 'translateX(100px) scale(1)'
+               })),
+               state('shrunk', style({
+                  'background-color': 'green',
+                  transform: 'translateX(0px) scale(0.5)'
+               })),
+               transition('normal <=> highlight', animate(300)),
+               transition('highlight => normal', animate(800)),
+               transition('shrunk <=> *', animate(500, style{
+                  borderRadius: '50px'
+               }))
+            ])
+         ]
+      })
+      export class AppComponent {
+         wildState = 'normal';
+         onAnimate() { this.wildState == 'normal' ? this.wildState = 'highlight' : this.wildState = 'normal'; }
+         onShrink() { this.wildState = 'shrunk'; }
+      }
+
+> We have three states, one will control the beginning state, another will control the end state and another for the middle state.
+> We have three transition animation for each state.
+> No matter whatever the state we are at the shrunk transition will animate when we use the wildcard asterisk (*) within our transition function.
+> The wildecard provides us the flexibility to be able to not manually define/specify a specific state which is also helpful for our application where we derive the state dynamically and we do not really know which state an element could have.
+> Not only can be control the timing of the animation but we can also control the whole animation and define styles that the animation should take during the animation.
+> The style function allows us to control the style of an element and we can use this function to control the style not only during the transition state but also in the animation by adding it as a second argument to animate.
+> However, the above example will not be a smooth transition from the three state.
+
+   app.component.ts:
+      ...
+      @Component({
+         animations: [
+            trigger('wildState', [
+               ...
+               transition('shrunk <=> *', [
+                  style({'background-color': 'orange', borderRadius: '0' }),
+                  animate(1000, style({ borderRadius: '50px' })),
+                  animate(500)
+               ])
+            ])
+         ]
+      })
+
+> To make the animation a smooth transition during the middle phase we would replace animate with an array as seen above.
+> We can add an array as the second argument to transition and we can also define the starting and inbetween states during the transition.
+> To avoid the ugly jump at the end on the animation we add another animate function of half a second which would occur after the first borderRadius style has been changed.
+> Therefore, in the above, we should see an instant change in the background colour to orange, then we should see the border radius developing over one second and thereafter we should see an animation of half a second where we remove the border radius again, shrink the object and turn it from orange back to the end state which is green.
+> The array allows us to define the different phases in the transition. The starting phase will be applied immediately if no animate function is applied. If we do apply the animate with a style this will animate the style over time. Finally, if we have animate on its own, this will animate to the end state.
+> We can have multiple inbetween styles but the important note is to end with an animate for the transition to the final state in order to have a smooth transition to the finishing state, otherwise we would see an ugly jump (instant snapping back) to the end state rather than a smooth transition.
