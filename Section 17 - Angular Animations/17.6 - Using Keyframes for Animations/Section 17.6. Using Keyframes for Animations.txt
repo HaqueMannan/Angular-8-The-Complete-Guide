@@ -1,0 +1,37 @@
+> We can create multiple phases in our animation; however, each phase gets the same importance as each other.
+> We can use keyframes to provide different level of importance in our animation phases.
+> To create a keyframe we use the keyframes function as the second argument to animate which also needs to be imported from @angular/animations.
+
+   app.component.ts:
+      ...
+      transition('void => *', animate(1000, keyframes([
+         style({
+            transform: 'translateX(-100px)',
+            opacity: 0,
+            offset: 0
+         }),
+         style({
+            transform: 'translateX(-50px)',
+            opacity: 0.5,
+            offset: 0.3
+         }),
+         style({
+            transform: 'translateX(-20px)',
+            opacity: 1,
+            offset: 0.8
+         }),
+         style({
+            transform: 'translateX(0px)',
+            opacity: 1,
+            offset: 1
+         })
+      ])))
+
+> The keyframes function allows us to be more precise for which part of multiple style we want to setup should occur at which timing.
+> In the above, the overall timing would take one second. However, we can now control how long which state inside of that animation should take to complete.
+> The keyframes takes in an array for each individual phases.
+> By default all the steps/phases inside of animate keyframes take equally as long i.e. they are executed at a 1/3 of a second. We can override this default behaviour by setting the offset property to specify exactly at what time in the one second the style/phase should animate.
+> An offset of 0 is at the beginning of the animation timeline while 1 is at the end of the animation timelines. The time between 0 and 1 are a percentage of the overall animation timeline for example 0.3 is 30%.
+> We add the final style which is equal to the final state style to prevent a snapping animation end and to allow a more smooth transition to the final state.
+> It is important to note that keyframes are used to to control precisely which state we want to have at a set the time "during the transition".
+> We can have multiple animate functions within the array we pass to transition function and each animate function could have multiple keyframes functions. There is unlimited possibilities.
